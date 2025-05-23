@@ -37,7 +37,7 @@ app.get('/', (req, res) => {
 });
 
 // Routes
-const orderRoutes = require('./backend/routes/orders'); // správna cesta ak štartuješ z koreňa
+const orderRoutes = require('./routes/orders'); // správna cesta ak štartuješ z koreňa
 
 app.use('/orders', orderRoutes);
 
