@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { fullImport } = require('../controllers/fullImport');
+
+// ✅ Funkčný import zo správneho súboru
+const { importOrdersCleaned } = require('../controllers/fullImportDescending');
+
 const {
   getOrders,
   getOrdersWithStatus,
@@ -9,8 +12,10 @@ const {
   getOrderById,
   getWorkloadByStaff
 } = require('../controllers/orderController');
+
 const { exportOrders } = require('../controllers/exportController');
 
+// 📦 API endpointy
 router.get('/', getOrders);
 router.get('/with-status', getOrdersWithStatus);
 router.get('/export', exportOrders);
@@ -21,7 +26,7 @@ router.get('/workload', getWorkloadByStaff);
 // ✅ Import spustený ako async task (neblokuje odpoveď)
 router.get('/full-import', (req, res) => {
   res.send('✅ Import spustený... beží na pozadí');
-  fullImport()
+  importOrdersCleaned()
     .then(() => console.log('✅ Full import dokončený'))
     .catch(err => console.error('❌ Chyba pri importe:', err));
 });
