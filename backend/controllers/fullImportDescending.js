@@ -15,18 +15,18 @@ const { SHOPIFY_API_URL, HEADERS } = require('../config/constants');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const progressPath = path.resolve(__dirname, '../progres.json');
-/*
+
 // ✅ Bezpečné načítanie posledného ID s fallbackom
-let lastId = 36000;
+let lastId = 0
 if (fs.existsSync(progressPath)) {
   try {
     const saved = JSON.parse(fs.readFileSync(progressPath, 'utf8'));
     lastId = saved.lastId || 36000;
   } catch (e) {
     console.warn('⚠️ Neplatný progress.json – začínam od 36000');
-    lastId = 36000;
+    lastId = 0
   }
-}*/
+}
 
 const BATCH_SIZE = 10; // Bezpečný limit pre Shopify API
 const DELAY_BETWEEN_BATCHES = 2500;
