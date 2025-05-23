@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { fullImport } = require('../controllers/fullImportController');
+const { fullImport } = require('../controllers/fullImport');
 const {
   getOrders,
   getOrdersWithStatus,
