@@ -1,5 +1,5 @@
 1. BACKEND – Shopify API & Spracovanie dát
- 1.1 – Prvé spojenie s Shopify API (GET orders)                             -DONE
+ 1.1 – Spojenie s Shopify API (GET orders)                             -DONE
 
  1.2 – Načítanie metafields pre každú objednávku                            -DONE
 
@@ -13,7 +13,7 @@
 
  1.7 – Paginácia (limit + offset)                                           -DONE
 
- 1.8 – Endpoint /orders/:id na detail objednávky
+ 1.8 – Endpoint /orders/:id na detail objednávky                            -DONE
 
  1.9 – Robustný error handling
 
