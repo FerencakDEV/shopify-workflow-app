@@ -18,8 +18,13 @@ router.get('/export', exportOrders);
 router.get('/stats', getOrderStats);
 router.get('/:id', getOrderById);
 router.get('/workload', getWorkloadByStaff);
-router.get('/full-import', fullImport);
 
-
+// ✅ Import spustený ako async task (neblokuje odpoveď)
+router.get('/full-import', (req, res) => {
+  res.send('✅ Import spustený... beží na pozadí');
+  fullImport()
+    .then(() => console.log('✅ Full import dokončený'))
+    .catch(err => console.error('❌ Chyba pri importe:', err));
+});
 
 module.exports = router;
