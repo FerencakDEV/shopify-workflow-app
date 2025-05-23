@@ -1,51 +1,29 @@
 const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config(); 
+const router = express.Router();
+const { fullImport } = require('../controllers/fullImport');
+const {
+  getOrders,
+  getOrdersWithStatus,
+  getCustomStatus,
+  getOrderStats,
+  getOrderById,
+  getWorkloadByStaff
+} = require('../controllers/orderController');
+const { exportOrders } = require('../controllers/exportController');
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+router.get('/', getOrders);
+router.get('/with-status', getOrdersWithStatus);
+router.get('/export', exportOrders);
+router.get('/stats', getOrderStats);
+router.get('/:id', getOrderById);
+router.get('/workload', getWorkloadByStaff);
 
-// ✅ Zabezpečenie priečinka logs/
-const logDir = path.join(__dirname, 'logs');
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
-  console.log('📁 Vytvorený priečinok logs/');
-}
-
-// ✅ Middleware
-app.use(express.json());
-
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:3000'];
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    const msg = `CORS policy: Origin ${origin} not allowed`;
-    console.error(msg);
-    return callback(new Error(msg), false);
-  },
-  credentials: true,
-}));
-
-// ✅ Pripojenie k MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
-
-// ✅ Routes
-const orderRoutes = require('./routes/orders');
-app.use('/orders', orderRoutes);
-
-// ✅ Úvodná routa
-app.get('/', (req, res) => {
-  res.send('Shopify backend beží 🚀');
+// ✅ Import spustený ako async task (neblokuje odpoveď)
+router.get('/full-import', (req, res) => {
+  res.send('✅ Import spustený... beží na pozadí');
+  fullImport()
+    .then(() => console.log('✅ Full import dokončený'))
+    .catch(err => console.error('❌ Chyba pri importe:', err));
 });
 
-// ✅ Spustenie servera
-app.listen(PORT, () => {
-  console.log(`Server beží na porte ${PORT}`);
-});
+module.exports = router;
