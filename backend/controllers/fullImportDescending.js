@@ -14,7 +14,7 @@ const { SHOPIFY_API_URL, HEADERS } = require('../config/constants');
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const progressPath = path.resolve(__dirname, '../progres.json');
+const progressPath = path.resolve(__dirname, '../progress.json');
 
 // ✅ Bezpečné načítanie posledného ID s fallbackom
 let lastId = 0
@@ -32,7 +32,7 @@ const BATCH_SIZE = 10; // Bezpečný limit pre Shopify API
 const DELAY_BETWEEN_BATCHES = 2500;
 
 const importOrdersCleaned = async () => {
-  let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&since_id=0;
+  let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&since_id=0`;
   let totalImported = 0;
 
   try {
