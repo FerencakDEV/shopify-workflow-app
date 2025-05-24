@@ -29,7 +29,7 @@ let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&order=created_at asc
   try {
     console.log('➡️ ENV SHOPIFY_API_URL:', process.env.SHOPIFY_API_URL);
     console.log('➡️ ENV TOKEN EXISTS:', !!process.env.SHOPIFY_TOKEN);
-    totalImported = 0;
+    let totalImported = 0;
     while (nextPageUrl) {
 
       const response = await axios.get(nextPageUrl, { headers: HEADERS });
