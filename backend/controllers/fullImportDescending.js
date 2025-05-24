@@ -16,17 +16,8 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const progressPath = path.resolve(__dirname, '../progress.json');
 
-// ✅ Bezpečné načítanie posledného ID s fallbackom
-let lastId = 0
-if (fs.existsSync(progressPath)) {
-  try {
-    const saved = JSON.parse(fs.readFileSync(progressPath, 'utf8'));
-    lastId = saved.lastId || 36000;
-  } catch (e) {
-    console.warn('⚠️ Neplatný progress.json – začínam od 36000');
-    lastId = 0
-  }
-}
+
+
 
 const BATCH_SIZE = 10; // Bezpečný limit pre Shopify API
 const DELAY_BETWEEN_BATCHES = 2500;
@@ -77,7 +68,7 @@ const importOrdersCleaned = async () => {
 
             await Order.findOneAndUpdate({ id: cleaned.id }, { $set: cleaned }, { upsert: true });
             lastId = cleaned.id;
-            fs.writeFileSync(progressPath, JSON.stringify({ lastId }));
+            
           } catch (err) {
             console.warn(`⚠️ Zlyhala objednávka ${order.id}:`, err.message);
           }
