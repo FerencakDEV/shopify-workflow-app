@@ -31,8 +31,6 @@ const importOrdersCleaned = async () => {
     console.log('➡️ ENV TOKEN EXISTS:', !!process.env.SHOPIFY_TOKEN);
 
     while (nextPageUrl) {
-      console.log('➡️ Fetching orders from:', nextPageUrl);
-      console.log('➡️ Shopify request headers:', HEADERS);
 
       const response = await axios.get(nextPageUrl, { headers: HEADERS });
       console.log('✅ Shopify response received:', response.status);
@@ -51,7 +49,6 @@ const importOrdersCleaned = async () => {
             console.log(`➡️ Fetching metafields for order ${order.id}:`, metafieldsUrl);
 
             const metaRes = await axios.get(metafieldsUrl, { headers: HEADERS });
-            console.log(`✅ Metafields fetched for order ${order.id}`);
 
             const rawMetafields = metaRes.data.metafields || [];
 
