@@ -95,9 +95,15 @@ const importOrdersCleaned = async () => {
     }
 
     console.log(`🎉 Import ukončený. Spolu importovaných: ${totalImported}`);
-  } catch (err) {
-    console.error('❌ Chyba pri importe:', err.response?.data || err.message);
-  }
+   } catch (err) {
+    console.error('❌ Request failed:', {
+      url: err.config?.url,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      headers: err.response?.headers
+    });
+  } // ← táto } ti chýbala
 };
 
 if (require.main === module) {
