@@ -29,7 +29,7 @@ let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&order=created_at asc
   try {
     console.log('➡️ ENV SHOPIFY_API_URL:', process.env.SHOPIFY_API_URL);
     console.log('➡️ ENV TOKEN EXISTS:', !!process.env.SHOPIFY_TOKEN);
-
+    totalImported = 0;
     while (nextPageUrl) {
 
       const response = await axios.get(nextPageUrl, { headers: HEADERS });
@@ -46,7 +46,6 @@ let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&order=created_at asc
         const tasks = batch.map(async (order) => {
           try {
             const metafieldsUrl = `${SHOPIFY_API_URL}/orders/${order.id}/metafields.json`;
-            console.log(`➡️ Fetching metafields for order ${order.id}:`, metafieldsUrl);
 
             const metaRes = await axios.get(metafieldsUrl, { headers: HEADERS });
 
@@ -87,6 +86,7 @@ let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&order=created_at asc
         });
 
         await Promise.allSettled(tasks);
+        
         totalImported += batch.length;
         console.log(`📦 Spracovaná dávka ${batch.length} objednávok (ID: ${batchFirstNumber} – ${batchLastNumber})`);
         await delay(DELAY_BETWEEN_BATCHES);
