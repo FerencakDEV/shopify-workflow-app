@@ -36,6 +36,8 @@ const importOrdersCleaned = async () => {
   let totalImported = 0;
 
   try {
+    console.log('➡️ ENV SHOPIFY_API_URL:', process.env.SHOPIFY_API_URL);
+    console.log('➡️ ENV TOKEN EXISTS:', !!process.env.SHOPIFY_API_TOKEN);
     while (nextPageUrl) {
       const response = await axios.get(nextPageUrl, { headers: HEADERS });
       const orders = response.data.orders;

@@ -1,11 +1,10 @@
-const SHOPIFY_API_URL = 'https://reasons-ie.myshopify.com/admin/api/2023-10';
+require('dotenv').config();
+
+const SHOPIFY_API_URL = process.env.SHOPIFY_API_URL;
 
 const HEADERS = {
-  'X-Shopify-Access-Token': process.env.SHOPIFY_TOKEN,
+  'X-Shopify-Access-Token': process.env.SHOPIFY_API_TOKEN,
   'Content-Type': 'application/json',
 };
 
-module.exports = {
-  SHOPIFY_API_URL,
-  HEADERS,
-};
+module.exports = { SHOPIFY_API_URL, HEADERS };

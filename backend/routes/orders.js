@@ -24,11 +24,14 @@ router.get('/:id', getOrderById);
 router.get('/workload', getWorkloadByStaff);
 
 // ✅ Import spustený ako async task (neblokuje odpoveď)
-router.get('/full-import', (req, res) => {
-  res.send('✅ Import spustený... beží na pozadí');
-  importOrdersCleaned()
-    .then(() => console.log('✅ Full import dokončený'))
-    .catch(err => console.error('❌ Chyba pri importe:', err));
+router.get('/full-import', async (req, res) => {
+  try {
+    await importOrdersCleaned();
+    res.status(200).json({ message: '✅ Full import dokončený' });
+  } catch (err) {
+    console.error('❌ Full import error:', err.message);
+    res.status(500).json({ error: 'Import zlyhal', details: err.message });
+  }
 });
 
 module.exports = router;
