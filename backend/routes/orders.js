@@ -27,11 +27,21 @@ router.get('/workload', getWorkloadByStaff);
 router.get('/full-import', async (req, res) => {
   try {
     await importOrdersCleaned();
-    res.status(200).json({ message: '✅ Full import dokončený' });
+    res.status(200).json({ message: '✅ Import úspešne dokončený' });
   } catch (err) {
-    console.error('❌ Full import error:', err.message);
-    res.status(500).json({ error: 'Import zlyhal', details: err.message });
+    console.error('❌ Import chyba z route:', {
+      message: err.message,
+      stack: err.stack,
+      url: err.config?.url,
+      method: err.config?.method,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      headers: err.response?.headers
+    });
+    res.status(500).json({ error: 'Nepodarilo sa spustiť import', detail: err.response?.data || err.message });
   }
 });
+
 
 module.exports = router;
