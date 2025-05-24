@@ -30,6 +30,8 @@ const importOrdersCleaned = async () => {
     console.log('➡️ ENV SHOPIFY_API_URL:', process.env.SHOPIFY_API_URL);
     console.log('➡️ ENV TOKEN EXISTS:', !!process.env.SHOPIFY_TOKEN);
     while (nextPageUrl) {
+      console.log('➡️ Fetching orders from:', nextPageUrl);
+
       const response = await axios.get(nextPageUrl, { headers: HEADERS });
       const orders = response.data.orders;
       if (!orders.length) break;
@@ -67,7 +69,7 @@ const importOrdersCleaned = async () => {
             });
 
             await Order.findOneAndUpdate({ id: cleaned.id }, { $set: cleaned }, { upsert: true });
-            lastId = cleaned.id;
+            
             
           } catch (err) {
             console.warn(`⚠️ Zlyhala objednávka ${order.id}:`, err.message);
