@@ -29,10 +29,14 @@ const importOrdersCleaned = async () => {
   try {
     console.log('➡️ ENV SHOPIFY_API_URL:', process.env.SHOPIFY_API_URL);
     console.log('➡️ ENV TOKEN EXISTS:', !!process.env.SHOPIFY_TOKEN);
+
     while (nextPageUrl) {
       console.log('➡️ Fetching orders from:', nextPageUrl);
+      console.log('➡️ Shopify request headers:', HEADERS);
 
       const response = await axios.get(nextPageUrl, { headers: HEADERS });
+      console.log('✅ Shopify response received:', response.status);
+
       const orders = response.data.orders;
       if (!orders.length) break;
 
@@ -41,9 +45,14 @@ const importOrdersCleaned = async () => {
         const batchFirstNumber = batch[0]?.order_number || batch[0]?.name;
         const batchLastNumber = batch[batch.length - 1]?.order_number || batch[batch.length - 1]?.name;
 
-        const tasks = batch.map(async order => {
+        const tasks = batch.map(async (order) => {
           try {
-            const metaRes = await axios.get(`${SHOPIFY_API_URL}/orders/${order.id}/metafields.json`, { headers: HEADERS });
+            const metafieldsUrl = `${SHOPIFY_API_URL}/orders/${order.id}/metafields.json`;
+            console.log(`➡️ Fetching metafields for order ${order.id}:`, metafieldsUrl);
+
+            const metaRes = await axios.get(metafieldsUrl, { headers: HEADERS });
+            console.log(`✅ Metafields fetched for order ${order.id}`);
+
             const rawMetafields = metaRes.data.metafields || [];
 
             const cleanMetafields = rawMetafields.filter(m => typeof m.key === 'string' && m.key.trim() !== '');
@@ -69,10 +78,14 @@ const importOrdersCleaned = async () => {
             });
 
             await Order.findOneAndUpdate({ id: cleaned.id }, { $set: cleaned }, { upsert: true });
-            
-            
+
           } catch (err) {
-            console.warn(`⚠️ Zlyhala objednávka ${order.id}:`, err.message);
+            console.warn(`⚠️ Zlyhala objednávka ${order.id}:`, {
+              url: err.config?.url,
+              status: err.response?.status,
+              data: err.response?.data,
+              message: err.message
+            });
           }
         });
 
@@ -88,16 +101,18 @@ const importOrdersCleaned = async () => {
     }
 
     console.log(`🎉 Import ukončený. Spolu importovaných: ${totalImported}`);
-   } catch (err) {
-    console.error('❌ Request failed:', {
+  } catch (err) {
+    console.error('❌ Request failed (main loop):', {
       url: err.config?.url,
       status: err.response?.status,
       statusText: err.response?.statusText,
       data: err.response?.data,
-      headers: err.response?.headers
+      headers: err.response?.headers,
+      message: err.message
     });
-  } // ← táto } ti chýbala
+  }
 };
+
 
 if (require.main === module) {
   mongoose.connect(process.env.MONGO_URI)
