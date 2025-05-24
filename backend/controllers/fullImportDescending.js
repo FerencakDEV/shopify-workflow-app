@@ -23,8 +23,8 @@ const BATCH_SIZE = 10; // Bezpečný limit pre Shopify API
 const DELAY_BETWEEN_BATCHES = 2500;
 
 const importOrdersCleaned = async () => {
-  let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&since_id=0`;
-  let totalImported = 0;
+let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&order=created_at asc&status=any`;
+
 
   try {
     console.log('➡️ ENV SHOPIFY_API_URL:', process.env.SHOPIFY_API_URL);
