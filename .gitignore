@@ -1,0 +1,38 @@
+# 🔁 Node modules
+**/node_modules/
+
+# 📦 Build výstupy
+**/dist/
+**/build/
+
+# 🧪 Logy a debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 🧪 Lokálne env
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.test
+
+# 🛠️ IDE a systémové súbory
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 💅 Cache a dočasné súbory
+*.cache
+*.tmp
+.cache/
+coverage/
+.next/
+out/
+
+# 💻 Typy a výstupy TypeScriptu
+*.tsbuildinfo
+
+# ⚙️ Git migrácie alebo predošlé utility
+git-filter-repo/

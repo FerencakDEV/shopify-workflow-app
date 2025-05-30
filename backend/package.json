@@ -1,0 +1,20 @@
+{
+  "name": "workflow-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --max-old-space-size=4096 server.js",
+    "cron": "node controllers/cronVerifyOrders.js"
+  },
+  "dependencies": {
+    "axios": "^1.9.0",
+    "chalk": "^4.1.2",
+    "cors": "^2.8.5",
+    "cron": "^4.3.0",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "json2csv": "^6.0.0-alpha.2",
+    "mongoose": "^8.15.0"
+  }
+}

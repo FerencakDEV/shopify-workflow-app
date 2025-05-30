@@ -1,0 +1,62 @@
+/* src/styles/WorkloadChart.css */
+.workload-chart {
+  width: 100%;
+  font-family: sans-serif;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.in-progress-label {
+  color: #f36b25;
+}
+
+.assigned-label {
+  color: #999;
+}
+
+.chart-bars {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+}
+
+.bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100px;
+  width: 20px;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.bar-in-progress {
+  background-color: #f36b25;
+  width: 100%;
+}
+
+.bar-assigned {
+  background-color: #ccc;
+  width: 100%;
+}
+
+.bar-labels {
+  text-align: center;
+  font-size: 12px;
+}
+
+.order-numbers {
+  color: #999;
+  font-size: 10px;
+}

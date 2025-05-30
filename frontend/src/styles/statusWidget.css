@@ -1,0 +1,58 @@
+/* src/styles/StatusWidget.css */
+.status-widget {
+  padding: 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  font-family: sans-serif;
+  display: flex;
+  align-items: center;
+  height: 80px;
+}
+
+.widget-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.widget-count {
+  font-size: 36px;
+  flex: 1;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}
+
+.widget-text {
+  flex: 2;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.widget-label {
+  font-size: 16px;
+}
+
+.widget-sublabel {
+  font-size: 13px;
+  font-weight: normal;
+}
+
+/* Colors – nechávame rovnaké */
+.blue        { background-color: #1CA9E4; }
+.red-dark    { background-color: #d53a64; }
+.blue-light  { background-color: #70c2e5; }
+.orange      { background-color: #f36b25; }
+.green-light { background-color: #a8e300; }
+.brown       { background-color: #b87642; }
+.purple      { background-color: #8243a8; }
+.pink        { background-color: #ed9dbd; }
+.dark        { background-color: #2f3640; }
+.red         { background-color: #e10600; }
+.black       { background-color: #1e272e; }
+.green       { background-color: #3ac569; }
