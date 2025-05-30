@@ -1,6 +1,6 @@
 // src/components/StatusWidget.tsx
 import React from 'react';
-import '../styles/StatusWidget.css';
+import '../styles/StatusWidgetstyle.css';
 
 interface StatusWidgetProps {
   count: number;
