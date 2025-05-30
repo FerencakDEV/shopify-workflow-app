@@ -27,7 +27,7 @@ const Home = () => {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const res = await fetch('/api/dashboard'); // alebo tvoj správny endpoint
+        const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/dashboard'); // alebo tvoj správny endpoint
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data: Counts = await res.json();
         setCounts(data);
