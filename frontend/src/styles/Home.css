@@ -1,4 +1,11 @@
 /* src/styles/Home.css */
+body, html, #root {
+  overflow: hidden;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
 .dashboard-container {
   display: flex;
   flex-direction: row;
@@ -13,8 +20,12 @@
   width: 50%;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
+  grid-auto-rows: 140px; /* mierne zväčšená výška pre lepšiu čitateľnosť */
+  gap: 12px; /* zmenšené medzery z 20px na 12px */
+  overflow-y: hidden; /* zakáž vertikálny scroll */
+  box-sizing: border-box;
 }
+
 
 .chart-section {
   width: 50%;

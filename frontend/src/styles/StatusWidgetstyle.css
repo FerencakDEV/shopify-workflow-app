@@ -1,13 +1,16 @@
 /* src/styles/StatusWidget.css */
 .status-widget {
-  padding: 20px;
-  border-radius: 8px;
+  padding: 20px 24px;
+  border-radius: 10px;
   color: white;
-  font-weight: bold;
-  font-family: sans-serif;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   align-items: center;
-  height: 80px;
+  height: 140px; /* zvýšená výška */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .widget-content {
@@ -18,7 +21,7 @@
 }
 
 .widget-count {
-  font-size: 36px;
+  font-size: 42px;
   flex: 1;
   text-align: left;
   display: flex;
@@ -35,12 +38,15 @@
 }
 
 .widget-label {
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 700;
 }
 
+
 .widget-sublabel {
-  font-size: 13px;
-  font-weight: normal;
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.85;
 }
 
 /* Colors – nechávame rovnaké */
@@ -56,3 +62,8 @@
 .red         { background-color: #e10600; }
 .black       { background-color: #1e272e; }
 .green       { background-color: #3ac569; }
+.status-widget:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  z-index: 10; /* aby hoverovaný widget bol nad ostatnými */
+}
