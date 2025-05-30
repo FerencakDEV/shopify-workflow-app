@@ -7,8 +7,9 @@ html{
   display: flex;
   flex-wrap: nowrap;
   width: 100vw;
-  height: 80vh;
+  height: 100%;
   padding: 32px;
+  padding-top: 100px;
   gap: 40px;
   box-sizing: border-box;
   font-family: 'Segoe UI', sans-serif;
