@@ -1,7 +1,6 @@
-/* src/styles/WorkloadChart.css */
 .workload-chart {
   width: 100%;
-  font-family: sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .chart-header {
@@ -13,6 +12,7 @@
 
 .in-progress-label {
   color: #f36b25;
+  font-weight: 700;
 }
 
 .assigned-label {

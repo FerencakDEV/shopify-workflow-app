@@ -1,16 +1,23 @@
-/* src/styles/StatusWidget.css */
 .status-widget {
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-radius: 10px;
-  color: white;
-  font-weight: 700;
+  background-color: #f5f7fa; /* jemné svetlé pozadie */
+  color: #222; /* tmavý text */
+  font-weight: 600;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   align-items: center;
-  height: 140px; /* zvýšená výška */
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 110px;
   cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
   box-sizing: border-box;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.08);
+}
+
+.status-widget:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+  z-index: 10;
 }
 
 .widget-content {
@@ -21,11 +28,14 @@
 }
 
 .widget-count {
-  font-size: 42px;
+  font-size: 82.5px; /* cca 75% výšky widgetu */
+  line-height: 1;
   flex: 1;
   text-align: left;
   display: flex;
   align-items: center;
+  color: #111;
+  font-weight: 700;
 }
 
 .widget-text {
@@ -35,35 +45,31 @@
   flex-direction: column;
   justify-content: center;
   align-items: flex-end;
+  color: #222;
 }
 
 .widget-label {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
+  margin-bottom: 4px;
 }
-
 
 .widget-sublabel {
-  font-size: 14px;
-  font-weight: 400;
-  opacity: 0.85;
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.75;
 }
 
-/* Colors – nechávame rovnaké */
-.blue        { background-color: #1CA9E4; }
-.red-dark    { background-color: #d53a64; }
-.blue-light  { background-color: #70c2e5; }
-.orange      { background-color: #f36b25; }
-.green-light { background-color: #a8e300; }
-.brown       { background-color: #b87642; }
-.purple      { background-color: #8243a8; }
-.pink        { background-color: #ed9dbd; }
-.dark        { background-color: #2f3640; }
-.red         { background-color: #e10600; }
-.black       { background-color: #1e272e; }
-.green       { background-color: #3ac569; }
-.status-widget:hover {
-  transform: scale(1.05);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  z-index: 10; /* aby hoverovaný widget bol nad ostatnými */
-}
+/* Colors – nastav podľa potreby, tu sú neutrálne pozadia */
+.blue        { background-color: #d9e9f7; }
+.red-dark    { background-color: #f2d7dc; }
+.blue-light  { background-color: #d7e9f7; }
+.orange      { background-color: #f8d8c0; }
+.green-light { background-color: #e6f0b0; }
+.brown       { background-color: #d8c1a2; }
+.purple      { background-color: #d7c5e6; }
+.pink        { background-color: #f9d9e2; }
+.dark        { background-color: #d9dae0; }
+.red         { background-color: #f7c4c1; }
+.black       { background-color: #d7d8db; }
+.green       { background-color: #c7e7ca; }
