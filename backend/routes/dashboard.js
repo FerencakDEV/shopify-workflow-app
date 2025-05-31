@@ -6,7 +6,16 @@ router.get('/status-counts', async (req, res) => {
   try {
     const orders = await Order.find({}, {
       fulfillment_status: 1,
-      metafields: 1
+      order_status: 1,
+      is_urgent: 1,
+      assignee_1: 1,
+      assignee_2: 1,
+      assignee_3: 1,
+      assignee_4: 1,
+      progress_1: 1,
+      progress_2: 1,
+      progress_3: 1,
+      progress_4: 1
     });
 
     const counts = {
@@ -24,129 +33,106 @@ router.get('/status-counts', async (req, res) => {
       allOrders: orders.length
     };
 
-    const get = (mf, path) => mf?.custom?.[path] || '';
+    const getProgressArray = (order) => [
+      order.progress_1 || '',
+      order.progress_2 || '',
+      order.progress_3 || '',
+      order.progress_4 || ''
+    ];
 
-    const countAssignees = (mf) => {
-      let count = 0;
-      if (get(mf, 'assignee')) count++;
-      if (get(mf, 'assignee-2')) count++;
-      if (get(mf, 'assignee-3')) count++;
-      if (get(mf, 'assignee-4')) count++;
-      return count;
-    };
+    const getAssigneeArray = (order) => [
+      order.assignee_1 || '',
+      order.assignee_2 || '',
+      order.assignee_3 || '',
+      order.assignee_4 || ''
+    ];
 
-    const hasProgress = (mf, name) => {
-      return [
-        get(mf, 'progress'),
-        get(mf, 'progress-2'),
-        get(mf, 'progress-3'),
-        get(mf, 'progress-4')
-      ].includes(name);
-    };
+    const hasProgress = (progressArray, name) => progressArray.includes(name);
+    const countAssignees = (assignees) => assignees.filter(a => a && a.trim() !== '').length;
 
     orders.forEach(order => {
       const status = (order.fulfillment_status || '').toLowerCase();
-      const mf = order.metafields;
-      const customStatus = get(mf, 'order-custom-status');
-      const urgency = get(mf, 'turnaround-urgency').toUpperCase();
-      const assignees = countAssignees(mf);
+      const customStatus = order.order_status || '';
+      const isUrgent = order.is_urgent === true;
+      const progressArray = getProgressArray(order);
+      const assignees = getAssigneeArray(order);
+      const assigneeCount = countAssignees(assignees);
 
-      // ❌ Skip fulfilled or cancelled orders
+      // 🔒 SKIP fulfilled alebo cancelled
       if (['fulfilled', 'cancelled'].includes(status)) return;
 
-      // ✅ NEW ORDERS
-      if (
-        status === 'unfulfilled' &&
-        customStatus === 'New Order' &&
-        assignees === 0
-      ) {
-        counts.newOrders++;
-      }
-
-      // ✅ URGENT NEW ORDERS
-      if (
-        status === 'unfulfilled' &&
-        customStatus === 'Urgent New Order' &&
-        assignees === 0 &&
-        urgency === 'URGENT'
-      ) {
-        counts.urgentNewOrders++;
-      }
-
-      // ✅ ASSIGNED ORDERS
-      if (
-        ['unfulfilled', 'partially fulfilled'].includes(status) &&
-        ['New Order', 'Urgent New Order'].includes(customStatus) &&
-        assignees > 0 &&
-        hasProgress(mf, 'Assigned')
-      ) {
-        counts.assignedOrders += assignees;
-      }
-
-      // ✅ IN PROGRESS
-      if (
-        ['unfulfilled', 'partially fulfilled'].includes(status) &&
-        ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) &&
-        hasProgress(mf, 'In Progress')
-      ) {
-        counts.inProgress += assignees;
-      }
-
-      // ✅ PRINTED-DONE
-      if (
-        ['unfulfilled', 'partially fulfilled'].includes(status) &&
-        ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) &&
-        hasProgress(mf, 'Printed-Done')
-      ) {
-        counts.printedDone += assignees;
-      }
-
-      // ✅ FINISHING & BINDING
-      if (
-        ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) &&
-        hasProgress(mf, 'Finishing & Binding')
-      ) {
-        counts.finishingBinding += assignees;
-      }
-
-      // ✅ TO BE CHECKED
-      if (
-        ['unfulfilled', 'partially fulfilled'].includes(status) &&
-        hasProgress(mf, 'To Be Checked')
-      ) {
-        counts.toBeChecked += assignees;
-      }
-
-      // ✅ READY FOR DISPATCH
-      if (
-        status === 'unfulfilled' &&
-        hasProgress(mf, 'Ready for Dispatch')
-      ) {
-        counts.readyForDispatch += assignees;
+      // ✅ ON HOLD
+      if (status === 'onhold' || customStatus === 'On Hold') {
+        counts.onHold += assigneeCount || 1;
+        return;
       }
 
       // ✅ READY FOR PICKUP
-      if (
-        status !== 'fulfilled' &&
-        hasProgress(mf, 'Ready for Pickup')
-      ) {
-        counts.readyForPickup += assignees;
+      if (status === 'ready for pickup' || customStatus === 'Ready for Pickup') {
+        counts.readyForPickup += assigneeCount || 1;
+        return;
       }
 
-      // ✅ ON HOLD
-      if (
-        status !== 'fulfilled' &&
-        customStatus === 'On Hold'
-      ) {
-        counts.onHold += assignees || 1;
-      }
+      // 🔄 Ak nie je status určený, zaraď podľa order_status
+      if (status === 'unfulfilled' || status === '') {
+        const hasAnyProgress = progressArray.some(p => p && p.trim() !== '');
 
-      // ✅ NEED ATTENTION
-      if (
-        status !== 'fulfilled' &&
-        customStatus === 'Need Attention'
-      ) {
-        counts.needAttention += assignees || 1;
+        // ✅ URGENT NEW ORDER
+        if ((customStatus === 'Urgent New Order' || isUrgent) && assigneeCount === 0 && !hasAnyProgress) {
+          counts.urgentNewOrders++;
+          return;
+        }
+
+        // ✅ NEW ORDER
+        if (customStatus === 'New Order' && !isUrgent && assigneeCount === 0 && !hasAnyProgress) {
+          counts.newOrders++;
+          return;
+        }
+
+        // ✅ ASSIGNED
+        if (['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) && assigneeCount > 0 && hasProgress(progressArray, 'Assigned')) {
+          counts.assignedOrders += assigneeCount;
+          return;
+        }
+
+        // ✅ IN PROGRESS
+        if (['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) && hasProgress(progressArray, 'In Progress')) {
+          counts.inProgress += assigneeCount;
+          return;
+        }
+
+        // ✅ PRINTED DONE
+        if (['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) && hasProgress(progressArray, 'Printed-Done')) {
+          counts.printedDone += assigneeCount;
+          return;
+        }
+
+        // ✅ FINISHING & BINDING
+        if (['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) && hasProgress(progressArray, 'Finishing & Binding')) {
+          counts.finishingBinding += assigneeCount;
+          return;
+        }
+
+        // ✅ TO BE CHECKED
+        if (hasProgress(progressArray, 'To Be Checked')) {
+          counts.toBeChecked += assigneeCount;
+          return;
+        }
+
+        // ✅ READY FOR DISPATCH
+        if (hasProgress(progressArray, 'Ready for Dispatch')) {
+          counts.readyForDispatch += assigneeCount;
+          return;
+        }
+
+        // ✅ NEED ATTENTION – nič nepasuje, ale má nejaký progress/assignee
+        if (assigneeCount > 0 || hasAnyProgress) {
+          counts.needAttention += assigneeCount || 1;
+          return;
+        }
+
+        // ✅ NEED ATTENTION fallback – úplne bez progressu/statusu
+        counts.needAttention += 1;
       }
     });
 
