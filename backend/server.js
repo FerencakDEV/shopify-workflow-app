@@ -8,7 +8,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const ordersByStatusRoutes = require('./routes/ordersByStatus');
 const {cleanOrder} = require('./controllers/cleanOrder')
 const app = express();
-
+const workloadChartRoutes = require('./routes/workloadChart');
 // ✅ CORS (musí byť pred všetkými routes)
 app.use(cors({
   origin: ['http://localhost:3000', 'https://shopify-workflow-app-frontend.onrender.com'],
@@ -39,7 +39,7 @@ app.get('/', (req, res) => {
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/orders', orderRoutes);
 app.use('/orders', ordersByStatusRoutes); // môže byť tu, lebo ide tiež na /orders
-
+app.use('/api/dashboard', workloadChartRoutes);
 // ✅ Webhooks
 
 // ✅ Webhook – CREATE
