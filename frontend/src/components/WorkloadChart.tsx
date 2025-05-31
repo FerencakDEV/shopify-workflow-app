@@ -1,3 +1,4 @@
+// WorkloadChart.tsx
 import React from 'react';
 import '../styles/WorkloadChart.css';
 
@@ -30,6 +31,34 @@ const mockData = [
     ordersInProgress: ['#66360'],
     ordersAssigned: ['#66361', '#66362'],
   },
+  {
+    assignee: 'Online',
+    inProgress: 2,
+    assigned: 4,
+    ordersInProgress: ['#66370', '#66371'],
+    ordersAssigned: ['#66372', '#66373', '#66374', '#66375'],
+  },
+  {
+    assignee: 'Magic T.',
+    inProgress: 1,
+    assigned: 4,
+    ordersInProgress: ['#66380'],
+    ordersAssigned: ['#66381', '#66382', '#66383', '#66384'],
+  },
+  {
+    assignee: 'Posters',
+    inProgress: 3,
+    assigned: 4,
+    ordersInProgress: ['#66390', '#66391', '#66392'],
+    ordersAssigned: ['#66393', '#66394', '#66395', '#66396'],
+  },
+  {
+    assignee: 'Thesis',
+    inProgress: 1,
+    assigned: 5,
+    ordersInProgress: ['#66400'],
+    ordersAssigned: ['#66401', '#66402', '#66403', '#66404', '#66405'],
+  },
 ];
 
 const WorkloadChart = () => {
@@ -45,12 +74,6 @@ const WorkloadChart = () => {
       <div className="workload-chart">
         {mockData.map((item, index) => (
           <div key={index} className="chart-column">
-            <div className="chart-counts">
-              <span className="count-inprogress">{item.inProgress}</span>
-              <span className="count-divider">|</span>
-              <span className="count-assigned">{item.assigned}</span>
-            </div>
-
             <div className="chart-bars">
               <div
                 className="bar-inprogress"
@@ -63,6 +86,12 @@ const WorkloadChart = () => {
             </div>
 
             <div className="chart-assignee">{item.assignee}</div>
+
+            <div className="chart-counts">
+              <span className="count-inprogress">{item.inProgress}</span>
+              <span className="count-divider">|</span>
+              <span className="count-assigned">{item.assigned}</span>
+            </div>
 
             <div className="chart-orders">
               {item.ordersInProgress.map((order, i) => (
