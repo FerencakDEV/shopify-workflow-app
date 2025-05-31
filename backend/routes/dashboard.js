@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
-router.get('/', async (req, res) => {
+router.get('/status-counts', async (req, res) => {
   try {
     const orders = await Order.find({}, {
       fulfillment_status: 1,

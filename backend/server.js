@@ -5,10 +5,11 @@ const mongoose = require('mongoose');
 const Order = require('./models/Order');
 const orderRoutes = require('./routes/orders');
 const dashboardRoutes = require('./routes/dashboard');
+const ordersByStatusRoutes = require('./routes/ordersByStatus');
 
 const app = express();
 
-// ✅ CORS (Musí byť pred routes!)
+// ✅ CORS (musí byť pred všetkými routes)
 app.use(cors({
   origin: ['http://localhost:3000', 'https://shopify-workflow-app-frontend.onrender.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -23,20 +24,21 @@ app.use(express.json({
     }
   }
 }));
-// ✅ PRIDAJ TOTO
+
+// ✅ Healthcheck
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// ✅ API Routes
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/orders', orderRoutes);
-
-// ✅ Healthcheck route
 app.get('/', (req, res) => {
   console.log('✅ GET / route hit');
   res.send('Shopify backend beží 🚀');
 });
+
+// ✅ API routes
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/orders', orderRoutes);
+app.use('/orders', ordersByStatusRoutes); // môže byť tu, lebo ide tiež na /orders
 
 // ✅ Webhooks
 app.post('/webhook/order-created', async (req, res) => {
@@ -61,7 +63,7 @@ app.post('/webhook/order-updated', async (req, res) => {
   }
 });
 
-// ✅ Spusti server až po spojení s MongoDB
+// ✅ Mongo + Server
 const PORT = process.env.PORT || 10000;
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
@@ -73,10 +75,11 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => {
     console.error('❌ MongoDB connection error:', err);
   });
+
+// ✅ Error handling
 process.on('uncaughtException', err => {
   console.error('🧨 Uncaught Exception:', err);
 });
-
 process.on('unhandledRejection', reason => {
   console.error('🧨 Unhandled Rejection:', reason);
 });
