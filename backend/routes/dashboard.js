@@ -17,133 +17,136 @@ router.get('/', async (req, res) => {
       printedDone: 0,
       finishingBinding: 0,
       toBeChecked: 0,
-      onHold: 0,
-      needAttention: 0,
       readyForDispatch: 0,
       readyForPickup: 0,
+      onHold: 0,
+      needAttention: 0,
       allOrders: orders.length
     };
 
-    // Spočíta, koľko assignee polí je vyplnených (nezávisle)
-    function countAssignees(order) {
-      let count = 0;
-      if (order.metafields?.custom?.['assignee']) count++;
-      if (order.metafields?.custom?.['assignee-2']) count++;
-      if (order.metafields?.custom?.['assignee-3']) count++;
-      if (order.metafields?.custom?.['assignee-4']) count++;
-      return count;
-    }
+    const get = (mf, path) => mf?.custom?.[path] || '';
 
-    // Skontroluje, či má order aspoň jedno progress pole s danou hodnotou
-    function hasProgress(order, progressName) {
-      return (
-        order.metafields?.custom?.['progress'] === progressName ||
-        order.metafields?.custom?.['progress-2'] === progressName ||
-        order.metafields?.custom?.['progress-3'] === progressName ||
-        order.metafields?.custom?.['progress-4'] === progressName
-      );
-    }
+    const countAssignees = (mf) => {
+      let count = 0;
+      if (get(mf, 'assignee')) count++;
+      if (get(mf, 'assignee-2')) count++;
+      if (get(mf, 'assignee-3')) count++;
+      if (get(mf, 'assignee-4')) count++;
+      return count;
+    };
+
+    const hasProgress = (mf, name) => {
+      return [
+        get(mf, 'progress'),
+        get(mf, 'progress-2'),
+        get(mf, 'progress-3'),
+        get(mf, 'progress-4')
+      ].includes(name);
+    };
 
     orders.forEach(order => {
-      const fulfillmentStatus = order.fulfillment_status?.toLowerCase() || '';
-      const customStatus = order.metafields?.custom?.['order-custom-status'] || '';
-      const turnaroundUrgency = order.metafields?.custom?.['turnaround-urgency'] || '';
+      const status = (order.fulfillment_status || '').toLowerCase();
+      const mf = order.metafields;
+      const customStatus = get(mf, 'order-custom-status');
+      const urgency = get(mf, 'turnaround-urgency').toUpperCase();
+      const assignees = countAssignees(mf);
 
-      const assigneesCount = countAssignees(order);
+      // ❌ Skip fulfilled or cancelled orders
+      if (['fulfilled', 'cancelled'].includes(status)) return;
 
-      // New Orders: Unfulfilled + New Order + žiadni assignee
+      // ✅ NEW ORDERS
       if (
-        fulfillmentStatus === 'unfulfilled' &&
+        status === 'unfulfilled' &&
         customStatus === 'New Order' &&
-        assigneesCount === 0
+        assignees === 0
       ) {
         counts.newOrders++;
       }
 
-      // Urgent New Orders: Unfulfilled + Urgent New Order + žiadni assignee + Urgency = URGENT
+      // ✅ URGENT NEW ORDERS
       if (
-        fulfillmentStatus === 'unfulfilled' &&
+        status === 'unfulfilled' &&
         customStatus === 'Urgent New Order' &&
-        assigneesCount === 0 &&
-        turnaroundUrgency.toUpperCase() === 'URGENT'
+        assignees === 0 &&
+        urgency === 'URGENT'
       ) {
         counts.urgentNewOrders++;
       }
 
-      // Assigned Orders: (Unfulfilled | Partially fulfilled) + New/Urgent New Order + assignee ≥ 1 + Assigned progress
+      // ✅ ASSIGNED ORDERS
       if (
-        (fulfillmentStatus === 'unfulfilled' || fulfillmentStatus === 'partially fulfilled') &&
-        (customStatus === 'New Order' || customStatus === 'Urgent New Order') &&
-        assigneesCount > 0 &&
-        hasProgress(order, 'Assigned')
+        ['unfulfilled', 'partially fulfilled'].includes(status) &&
+        ['New Order', 'Urgent New Order'].includes(customStatus) &&
+        assignees > 0 &&
+        hasProgress(mf, 'Assigned')
       ) {
-        counts.assignedOrders += assigneesCount;
+        counts.assignedOrders += assignees;
       }
 
-      // In Progress: (Unfulfilled | Partially fulfilled) + New/Urgent/Hold Released + In Progress progress
+      // ✅ IN PROGRESS
       if (
-        (fulfillmentStatus === 'unfulfilled' || fulfillmentStatus === 'partially fulfilled') &&
-        (customStatus === 'New Order' || customStatus === 'Urgent New Order' || customStatus === 'Hold Released') &&
-        hasProgress(order, 'In Progress')
+        ['unfulfilled', 'partially fulfilled'].includes(status) &&
+        ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) &&
+        hasProgress(mf, 'In Progress')
       ) {
-        counts.inProgress += assigneesCount;
+        counts.inProgress += assignees;
       }
 
-      // Printed-Done: (Unfulfilled | Partially fulfilled) + New/Urgent/Hold Released + Printed-Done progress
+      // ✅ PRINTED-DONE
       if (
-        (fulfillmentStatus === 'unfulfilled' || fulfillmentStatus === 'partially fulfilled') &&
-        (customStatus === 'New Order' || customStatus === 'Urgent New Order' || customStatus === 'Hold Released') &&
-        hasProgress(order, 'Printed-Done')
+        ['unfulfilled', 'partially fulfilled'].includes(status) &&
+        ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) &&
+        hasProgress(mf, 'Printed-Done')
       ) {
-        counts.printedDone += assigneesCount;
+        counts.printedDone += assignees;
       }
 
-      // Finishing & Binding: New/Urgent/Hold Released + Finishing & Binding progress
+      // ✅ FINISHING & BINDING
       if (
-        (customStatus === 'New Order' || customStatus === 'Urgent New Order' || customStatus === 'Hold Released') &&
-        hasProgress(order, 'Finishing & Binding')
+        ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus) &&
+        hasProgress(mf, 'Finishing & Binding')
       ) {
-        counts.finishingBinding += assigneesCount;
+        counts.finishingBinding += assignees;
       }
 
-      // To be Checked: (Unfulfilled | Partially fulfilled) + To Be Checked progress
+      // ✅ TO BE CHECKED
       if (
-        (fulfillmentStatus === 'unfulfilled' || fulfillmentStatus === 'partially fulfilled') &&
-        hasProgress(order, 'To Be Checked')
+        ['unfulfilled', 'partially fulfilled'].includes(status) &&
+        hasProgress(mf, 'To Be Checked')
       ) {
-        counts.toBeChecked += assigneesCount;
+        counts.toBeChecked += assignees;
       }
 
-      // Ready for Dispatch: Unfulfilled + Ready for Dispatch progress
+      // ✅ READY FOR DISPATCH
       if (
-        fulfillmentStatus === 'unfulfilled' &&
-        hasProgress(order, 'Ready for Dispatch')
+        status === 'unfulfilled' &&
+        hasProgress(mf, 'Ready for Dispatch')
       ) {
-        counts.readyForDispatch += assigneesCount;
+        counts.readyForDispatch += assignees;
       }
 
-      // Ready for Pickup: fulfillment status nie je fulfilled + Ready for Pickup progress
+      // ✅ READY FOR PICKUP
       if (
-        fulfillmentStatus !== 'fulfilled' &&
-        hasProgress(order, 'Ready for Pickup')
+        status !== 'fulfilled' &&
+        hasProgress(mf, 'Ready for Pickup')
       ) {
-        counts.readyForPickup += assigneesCount;
+        counts.readyForPickup += assignees;
       }
 
-      // On Hold: fulfillment status nie je fulfilled + On Hold custom status
+      // ✅ ON HOLD
       if (
-        fulfillmentStatus !== 'fulfilled' &&
+        status !== 'fulfilled' &&
         customStatus === 'On Hold'
       ) {
-        counts.onHold += assigneesCount || 1; // aspoň 1, ak žiadny assignee
+        counts.onHold += assignees || 1;
       }
 
-      // Need Attention: fulfillment status nie je fulfilled + Need Attention custom status
+      // ✅ NEED ATTENTION
       if (
-        fulfillmentStatus !== 'fulfilled' &&
+        status !== 'fulfilled' &&
         customStatus === 'Need Attention'
       ) {
-        counts.needAttention += assigneesCount || 1;
+        counts.needAttention += assignees || 1;
       }
     });
 
