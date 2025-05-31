@@ -6,7 +6,7 @@ const Order = require('./models/Order');
 const orderRoutes = require('./routes/orders');
 const dashboardRoutes = require('./routes/dashboard');
 const ordersByStatusRoutes = require('./routes/ordersByStatus');
-
+const {cleanOrder} = require('./controllers/cleanOrder')
 const app = express();
 
 // ✅ CORS (musí byť pred všetkými routes)
@@ -41,10 +41,15 @@ app.use('/orders', orderRoutes);
 app.use('/orders', ordersByStatusRoutes); // môže byť tu, lebo ide tiež na /orders
 
 // ✅ Webhooks
+
+// ✅ Webhook – CREATE
 app.post('/webhook/order-created', async (req, res) => {
   try {
     console.log('📦 Webhook – CREATE prijatý:', req.body.order_number);
-    await Order.create(req.body);
+
+    const cleaned = cleanOrder(req.body); // použijeme transformáciu
+    await Order.create(cleaned);
+
     res.status(200).send('Order uložená');
   } catch (err) {
     console.error('❌ Chyba v order-created:', err.message);
@@ -52,10 +57,14 @@ app.post('/webhook/order-created', async (req, res) => {
   }
 });
 
+// ✅ Webhook – UPDATE
 app.post('/webhook/order-updated', async (req, res) => {
   try {
     console.log('🔁 Webhook – UPDATE prijatý:', req.body.order_number);
-    await Order.updateOne({ id: req.body.id }, { $set: req.body }, { upsert: true });
+
+    const cleaned = cleanOrder(req.body);
+    await Order.updateOne({ id: cleaned.id }, { $set: cleaned }, { upsert: true });
+
     res.status(200).send('Order aktualizovaná');
   } catch (err) {
     console.error('❌ Chyba v order-updated:', err.message);
