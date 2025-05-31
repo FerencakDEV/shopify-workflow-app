@@ -1,22 +1,23 @@
+/* WorkloadChart.css */
+
 .workload-container {
   padding: 24px;
-  background-color: #ffffff;
+  background-color: #fff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .workload-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .workload-title {
   font-size: 20px;
   font-weight: 600;
-  color: #111;
+  color: #222;
 }
 
 .workload-subtitle {
@@ -26,95 +27,84 @@
 }
 
 .workload-badge {
+  background-color: #14b8a6;
+  color: #fff;
   font-size: 12px;
-  background-color: #14b8a6; /* teal-400 */
-  color: white;
   padding: 4px 8px;
-  border-radius: 6px;
-  font-weight: 500;
+  border-radius: 8px;
 }
 
 .workload-chart {
   display: flex;
-  gap: 24px;
+  gap: 36px;
   overflow-x: auto;
-  padding-bottom: 10px;
+  padding-bottom: 12px;
 }
 
 .chart-column {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 120px;
-  position: relative;
+  min-width: 100px;
 }
 
 .chart-counts {
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  margin-bottom: 6px;
   font-weight: 600;
-  margin-bottom: 8px;
 }
 
 .count-inprogress {
-  color: #f97316; /* orange-500 */
-}
-
-.count-divider {
-  color: #999;
+  color: #f97316; /* orange */
 }
 
 .count-assigned {
-  color: #ccc;
+  color: #9ca3af; /* gray */
+}
+
+.count-divider {
+  color: #888;
 }
 
 .chart-bars {
   display: flex;
   align-items: flex-end;
-  height: 128px;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  height: 160px;
 }
 
 .bar-inprogress {
-  width: 24px;
-  background-color: #f97316; /* orange-500 */
-  border-radius: 4px 4px 0 0;
-  transition: height 0.2s ease;
+  width: 16px;
+  background-color: #f97316; /* orange */
+  border-radius: 4px;
 }
 
 .bar-assigned {
-  width: 24px;
-  background-color: #e5e7eb; /* gray-300 */
-  border-radius: 4px 4px 0 0;
-  transition: height 0.2s ease;
+  width: 16px;
+  background-color: #d1d5db; /* light gray */
+  border-radius: 4px;
 }
 
 .chart-assignee {
+  margin-top: 8px;
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 6px;
-  color: #222;
+  color: #333;
 }
 
 .chart-orders {
+  margin-top: 6px;
   font-size: 12px;
   text-align: center;
-  line-height: 1.5;
-  max-width: 100px;
 }
 
 .order-inprogress {
   color: #f97316;
-  cursor: pointer;
+  margin-bottom: 2px;
 }
 
 .order-assigned {
   color: #9ca3af;
-  cursor: pointer;
-}
-
-.order-inprogress:hover,
-.order-assigned:hover {
-  text-decoration: underline;
+  margin-bottom: 2px;
 }
