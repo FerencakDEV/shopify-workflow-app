@@ -32,22 +32,19 @@ const fetchMetafields = async (orderId, retries = 3) => {
   return [];
 };
 
-const fixInvalidOrders = async () => {
-  const orders = await Order.find({ fulfillment_status: null });
-
-  for (const dbOrder of orders) {
-    console.log(`🔧 Oprava objednávky ${dbOrder.name || dbOrder.id}`);
-
-    const metafields = await fetchMetafields(dbOrder.id);
-    const cleaned = cleanOrder(dbOrder, metafields);
-
-    await Order.updateOne(
-      { id: dbOrder.id },
-      { $set: cleaned }
-    );
-
-    console.log(`✅ Objednávka ${dbOrder.name || dbOrder.id} bola opravená.`);
-  }
+const hasImportantChange = (db, api) => {
+  return (
+    db.order_number !== api.order_number ||
+    db.fulfillment_status !== api.fulfillment_status ||
+    db.assignee_1 !== api.assignee_1 ||
+    db.assignee_2 !== api.assignee_2 ||
+    db.assignee_3 !== api.assignee_3 ||
+    db.assignee_4 !== api.assignee_4 ||
+    db.progress_1 !== api.progress_1 ||
+    db.progress_2 !== api.progress_2 ||
+    db.progress_3 !== api.progress_3 ||
+    db.progress_4 !== api.progress_4
+  );
 };
 
 const runCronSync = async () => {
@@ -69,13 +66,13 @@ const runCronSync = async () => {
 
     for (const order of orders) {
       const existing = await Order.findOne({ id: order.id });
-      await delay(400); // Globálne spomalenie medzi každou objednávkou
+      await delay(400);
 
       const metafields = await fetchMetafields(order.id);
+      const cleaned = cleanOrder(order, metafields);
 
       if (!existing) {
         try {
-          const cleaned = cleanOrder(order, metafields);
           await Order.create(cleaned);
           added.push(order.name || order.order_number);
           console.log(`✅ Pridaná nová objednávka: ${order.name || order.id}`);
@@ -88,10 +85,11 @@ const runCronSync = async () => {
       const dbTime = new Date(existing.updated_at).getTime();
       const apiTime = new Date(order.updated_at).getTime();
 
-      if (dbTime !== apiTime) {
-        console.log(`🔄 Rozdiel v updated_at:\n  DB:  ${existing.updated_at}\n  API: ${order.updated_at}`);
+      if (dbTime !== apiTime || hasImportantChange(existing, cleaned)) {
+        console.log(`🔄 Rozdiel v updated alebo dôležité zmeny:
+  DB:  ${existing.updated_at}
+  API: ${order.updated_at}`);
         try {
-          const cleaned = cleanOrder(order, metafields);
           await Order.updateOne({ id: order.id }, { $set: cleaned });
           updated.push(order.name || order.order_number);
         } catch (err) {
@@ -101,8 +99,6 @@ const runCronSync = async () => {
         unchanged.push(order.name || order.order_number);
       }
     }
-
-    await fixInvalidOrders();
 
     console.log(`\n📊 Súhrn výsledkov:`);
     console.log(`➕ Pridané: ${added.length}`);
