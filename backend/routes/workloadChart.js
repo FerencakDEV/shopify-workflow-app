@@ -5,7 +5,7 @@ const Order = require('../models/Order');
 router.get('/workload-chart', async (req, res) => {
   try {
     const orders = await Order.find(
-      { fulfillment_status: 'unfulfilled' },
+      { fulfillment_status: 'unfulfilled' }, // iba nevybavené objednávky
       {
         order_status: 1,
         assignee_1: 1,
@@ -23,25 +23,32 @@ router.get('/workload-chart', async (req, res) => {
     const result = {};
 
     orders.forEach(order => {
-      const status = (order.order_status || '').toLowerCase();
+      const rawStatus = order.order_status || '';
+      const status = rawStatus.trim().toLowerCase();
+
       if (excludedStatuses.includes(status)) return;
 
       for (let i = 1; i <= 4; i++) {
         const assignee = (order[`assignee_${i}`] || '').trim();
         const progress = (order[`progress_${i}`] || '').trim();
 
-        if (assignee) {
+        // Ignoruj len ak je assignee úplne prázdne
+        if (assignee !== '') {
+          // Inicializuj ak ešte neexistuje
           if (!result[assignee]) result[assignee] = { assigned: 0, inProgress: 0 };
 
-          if (progress === 'Assigned') result[assignee].assigned += 1;
-          else if (progress === 'In Progress') result[assignee].inProgress += 1;
+          // Normalize case
+          const normalizedProgress = progress.toLowerCase();
+
+          if (normalizedProgress === 'assigned') result[assignee].assigned += 1;
+          else if (normalizedProgress === 'in progress') result[assignee].inProgress += 1;
         }
       }
     });
 
     res.json(result);
   } catch (err) {
-    console.error('Workload Chart Error:', err);
+    console.error('❌ Workload Chart Error:', err);
     res.status(500).json({ error: 'Failed to fetch workload chart data' });
   }
 });
