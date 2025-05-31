@@ -1,3 +1,6 @@
+.full-height {
+  height: 100%;
+}
 .workload-container {
   padding: 24px;
   background-color: #fff;
@@ -42,8 +45,8 @@
 }
 
 .chart-column {
-  flex: 1;
-  min-width: 0;
+  flex: 1 0 120px;
+  max-width: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -115,4 +118,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.workload-chart.expanded {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 40px;
+  padding-bottom: 20px;
+  overflow-x: hidden;
 }
