@@ -45,6 +45,8 @@
 .workload-chart {
   display: flex;
   flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
   gap: 32px;
   min-width: max-content;
   padding-bottom: 16px;
