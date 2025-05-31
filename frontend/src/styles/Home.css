@@ -118,7 +118,7 @@ html {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-around;
-  gap: 32px;
+  gap: 0px;
   padding-bottom: 16px;
   width: 100%;
   box-sizing: border-box;
