@@ -2,6 +2,15 @@ html {
   width: 100vw;
   height: 100vh;
 }
+.dashboard-container,
+.chart-section,
+.workload-container,
+.workload-scroll,
+.workload-chart {
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
 
 .dashboard-container {
   display: flex;
@@ -29,7 +38,7 @@ html {
 
 .chart-section {
   flex: 1;
-  min-width: 600px;
+  max-width: 50vh;
   height: 100%;
   background: #fff;
   border-radius: 12px;
@@ -126,7 +135,7 @@ html {
 
 .chart-column {
   flex: 1 0 90;
-  max-width: 140px;
+  max-width: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;

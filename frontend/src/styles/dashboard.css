@@ -3,8 +3,8 @@
   flex-wrap: nowrap;
   width: 100vw;
   height: 100vh;
-  padding: 32px;
-  padding-top: 50px;
+  padding: 50px;
+  
   gap: 40px;
   box-sizing: border-box;
   font-family: 'Segoe UI', sans-serif;
