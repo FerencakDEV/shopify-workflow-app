@@ -13,19 +13,23 @@ const ContentHeader = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // 🔁 Kontrola API (dummy check, nahradíš reálnym URL)
-  useEffect(() => {
-    const checkAPI = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/health'); // sem daj svoj backend ping
-        if (!res.ok) throw new Error('API error');
-        setApiStatus('live');
-      } catch {
-        setApiStatus('error');
-      }
-    };
-    checkAPI();
-  }, []);
+  // 🔁 Kontrola API 3seconds interval
+useEffect(() => {
+  const checkAPI = async () => {
+    try {
+      const res = await fetch('https://shopify-workflow-app-backend.onrender.com/ping');
+      if (!res.ok) throw new Error('API error');
+      setApiStatus('live');
+    } catch {
+      setApiStatus('error');
+    }
+  };
+
+  checkAPI(); // inicializačný ping
+
+  const interval = setInterval(checkAPI, 30000); // každých 30 sekúnd
+  return () => clearInterval(interval);
+}, []);
 
   const formattedTime = dateTime.toLocaleString('en-GB', {
     weekday: 'short',

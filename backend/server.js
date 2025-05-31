@@ -23,6 +23,10 @@ app.use(express.json({
     }
   }
 }));
+// ✅ PRIDAJ TOTO
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
 
 // ✅ API Routes
 app.use('/api/dashboard', dashboardRoutes);
