@@ -1,3 +1,5 @@
+// backend/controllers/cronVerifyOrders.js
+
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../backend/.env') });
 
 const mongoose = require('mongoose');
@@ -9,42 +11,15 @@ const { SHOPIFY_API_URL, HEADERS } = require('../config/constants');
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const fetchMetafields = async (orderId, retries = 3) => {
-  const url = `${SHOPIFY_API_URL}/orders/${orderId}/metafields.json`;
-
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const res = await axios.get(url, { headers: HEADERS });
-      return res.data.metafields || [];
-    } catch (err) {
-      if (err.response && err.response.status === 429) {
-        const waitTime = 1000 * attempt;
-        console.warn(`⏳ Rate limit hit (429) for Order ${orderId}, retrying in ${waitTime}ms... [attempt ${attempt}/${retries}]`);
-        await delay(waitTime);
-      } else {
-        console.warn(`⚠️ Metafields fetch failed for Order ${orderId}: ${err.message}`);
-        return [];
-      }
-    }
+const fetchMetafields = async (orderId) => {
+  try {
+    const url = `${SHOPIFY_API_URL}/orders/${orderId}/metafields.json`;
+    const res = await axios.get(url, { headers: HEADERS });
+    return res.data.metafields || [];
+  } catch (err) {
+    console.warn(`⚠️ Metafields fetch failed for Order ${orderId}: ${err.message}`);
+    return [];
   }
-
-  console.error(`❌ Metafields permanently failed for Order ${orderId} after ${retries} attempts.`);
-  return [];
-};
-
-const hasImportantChange = (db, api) => {
-  return (
-    db.order_number !== api.order_number ||
-    db.fulfillment_status !== api.fulfillment_status ||
-    db.assignee_1 !== api.assignee_1 ||
-    db.assignee_2 !== api.assignee_2 ||
-    db.assignee_3 !== api.assignee_3 ||
-    db.assignee_4 !== api.assignee_4 ||
-    db.progress_1 !== api.progress_1 ||
-    db.progress_2 !== api.progress_2 ||
-    db.progress_3 !== api.progress_3 ||
-    db.progress_4 !== api.progress_4
-  );
 };
 
 const runCronSync = async () => {
@@ -53,10 +28,7 @@ const runCronSync = async () => {
   console.log(`\n🕒 CRON spustený: ${now}`);
 
   const url = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any&order=id desc`;
-
-  const added = [];
-  const updated = [];
-  const unchanged = [];
+  const added = [], updated = [], unchanged = [];
 
   try {
     const response = await axios.get(url, { headers: HEADERS });
@@ -66,37 +38,39 @@ const runCronSync = async () => {
 
     for (const order of orders) {
       const existing = await Order.findOne({ id: order.id });
-      await delay(400);
+      await delay(300);
 
       const metafields = await fetchMetafields(order.id);
       const cleaned = cleanOrder(order, metafields);
 
+      // 🔧 Fulfillment oprav
+      if (!cleaned.fulfillment_status || cleaned.fulfillment_status === null) {
+        const status = cleaned.custom_status?.toLowerCase() || '';
+        if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
+        else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
+        else if (status.includes('onhold')) cleaned.fulfillment_status = 'onhold';
+        else cleaned.fulfillment_status = 'unfulfilled';
+      }
+
       if (!existing) {
-        try {
-          await Order.create(cleaned);
-          added.push(order.name || order.order_number);
-          console.log(`✅ Pridaná nová objednávka: ${order.name || order.id}`);
-        } catch (err) {
-          console.error(`❌ Chyba pri ukladaní novej objednávky ${order.name || order.id}:`, err.message);
-        }
+        await Order.create(cleaned);
+        added.push(cleaned.order_number || cleaned.id);
+        console.log(`✅ Pridaná objednávka: ${cleaned.order_number}`);
         continue;
       }
 
-      const dbTime = new Date(existing.updated_at).getTime();
-      const apiTime = new Date(order.updated_at).getTime();
+      const changed =
+        JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
+        JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
+        existing.order_number !== cleaned.order_number ||
+        existing.fulfillment_status !== cleaned.fulfillment_status;
 
-      if (dbTime !== apiTime || hasImportantChange(existing, cleaned)) {
-        console.log(`🔄 Rozdiel v updated alebo dôležité zmeny:
-  DB:  ${existing.updated_at}
-  API: ${order.updated_at}`);
-        try {
-          await Order.updateOne({ id: order.id }, { $set: cleaned });
-          updated.push(order.name || order.order_number);
-        } catch (err) {
-          console.error(`❌ Chyba pri update objednávky ${order.name || order.id}:`, err.message);
-        }
+      if (changed) {
+        await Order.updateOne({ id: order.id }, { $set: cleaned });
+        updated.push(cleaned.order_number || cleaned.id);
+        console.log(`🔄 Aktualizovaná objednávka: ${cleaned.order_number}`);
       } else {
-        unchanged.push(order.name || order.order_number);
+        unchanged.push(cleaned.order_number || cleaned.id);
       }
     }
 
@@ -105,15 +79,16 @@ const runCronSync = async () => {
     console.log(`🔄 Aktualizované: ${updated.length}`);
     console.log(`⏭️ Nezmenené: ${unchanged.length}`);
 
-    try {
-      await CronLog.create({ timestamp: new Date(), added, updated, unchanged, runBy: 'system-cron' });
-      console.log('📘 CronLog zapísaný.');
-    } catch (err) {
-      console.error('❌ CronLog ERROR:', err.message);
-    }
-
+    await CronLog.create({
+      timestamp: new Date(),
+      added,
+      updated,
+      unchanged,
+      runBy: 'system-cron'
+    });
+    console.log('📘 CronLog zapísaný.');
   } catch (err) {
-    console.error('❌ Chyba pri synchronizácii:', err.message);
+    console.error('❌ Chyba pri CRON syncu:', err.message);
   }
 };
 
