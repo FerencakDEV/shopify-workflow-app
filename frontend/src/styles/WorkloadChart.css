@@ -34,16 +34,19 @@
 
 .workload-chart {
   display: flex;
-  gap: 36px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px;
   overflow-x: auto;
   padding-bottom: 12px;
 }
 
 .chart-column {
+  flex: 1 1 100px;
+  max-width: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 100px;
 }
 
 .chart-counts {

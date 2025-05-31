@@ -18,13 +18,6 @@ const mockData = [
     ordersAssigned: ['#66346', '#66347', '#66348'],
   },
   {
-    assignee: 'Q3',
-    inProgress: 0,
-    assigned: 4,
-    ordersInProgress: [],
-    ordersAssigned: ['#66350', '#66351', '#66352', '#66353'],
-  },
-  {
     assignee: 'Design 2',
     inProgress: 1,
     assigned: 2,
