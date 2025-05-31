@@ -1,62 +1,120 @@
-.workload-chart {
-  width: 100%;
+.workload-container {
+  padding: 24px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.chart-header {
+.workload-header {
   display: flex;
   justify-content: space-between;
-  font-weight: bold;
-  margin-bottom: 10px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-.in-progress-label {
-  color: #f36b25;
-  font-weight: 700;
+.workload-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111;
 }
 
-.assigned-label {
+.workload-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-left: 8px;
+}
+
+.workload-badge {
+  font-size: 12px;
+  background-color: #14b8a6; /* teal-400 */
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.workload-chart {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.chart-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+  position: relative;
+}
+
+.chart-counts {
+  display: flex;
+  gap: 6px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.count-inprogress {
+  color: #f97316; /* orange-500 */
+}
+
+.count-divider {
   color: #999;
+}
+
+.count-assigned {
+  color: #ccc;
 }
 
 .chart-bars {
   display: flex;
-  gap: 20px;
   align-items: flex-end;
+  height: 128px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.bar-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.bar {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  height: 100px;
-  width: 20px;
-  position: relative;
-  margin-bottom: 4px;
-}
-
-.bar-in-progress {
-  background-color: #f36b25;
-  width: 100%;
+.bar-inprogress {
+  width: 24px;
+  background-color: #f97316; /* orange-500 */
+  border-radius: 4px 4px 0 0;
+  transition: height 0.2s ease;
 }
 
 .bar-assigned {
-  background-color: #ccc;
-  width: 100%;
+  width: 24px;
+  background-color: #e5e7eb; /* gray-300 */
+  border-radius: 4px 4px 0 0;
+  transition: height 0.2s ease;
 }
 
-.bar-labels {
-  text-align: center;
+.chart-assignee {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #222;
+}
+
+.chart-orders {
   font-size: 12px;
+  text-align: center;
+  line-height: 1.5;
+  max-width: 100px;
 }
 
-.order-numbers {
-  color: #999;
-  font-size: 10px;
+.order-inprogress {
+  color: #f97316;
+  cursor: pointer;
+}
+
+.order-assigned {
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.order-inprogress:hover,
+.order-assigned:hover {
+  text-decoration: underline;
 }
