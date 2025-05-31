@@ -32,6 +32,8 @@
   overflow-x: auto;
   overflow-y: hidden;
   display: block;
+  width: 50%;
+  min-width: 50%;
 }
 
 /* Responzivita */
