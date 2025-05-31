@@ -23,6 +23,7 @@ html{
   gap: 10px;               /* minimalizované medzery */
   overflow-y: hidden;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .chart-section {
