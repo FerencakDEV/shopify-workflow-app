@@ -39,40 +39,51 @@ const fetchWithRetry = async (id, maxAttempts = 3, delayMs = 2000) => {
     const fullOrder = await fetchFullOrder(id);
     const metafields = await fetchMetafields(id);
 
-    const hasFulfillment = fullOrder?.fulfillment_status !== null;
-    const hasMetafields = metafields?.length > 0;
-
-    if (hasFulfillment && hasMetafields) {
+    if (fullOrder) {
       return { fullOrder, metafields };
     }
 
-    console.log(`⏳ [${attempt}/${maxAttempts}] Čakám na dáta pre ${fullOrder?.name || id}...`);
+    console.log(`⏳ [${attempt}/${maxAttempts}] Waiting for full data of ${id}...`);
     await delay(delayMs);
   }
 
-  console.warn(`⚠️ Nepodarilo sa získať kompletné dáta pre objednávku ${id}`);
+  console.warn(`⚠️ Failed to fetch full order data for ${id}`);
   return { fullOrder: null, metafields: [] };
+};
+
+const resolveFallbackFulfillment = (order, cleanedOrder) => {
+  if (!cleanedOrder.fulfillment_status || cleanedOrder.fulfillment_status === 'null') {
+    const status = cleanedOrder.order_status?.toLowerCase();
+    if (status === 'cancelled') {
+      cleanedOrder.fulfillment_status = 'fulfilled';
+    } else if (['onhold', 'ready for pickup'].includes(status)) {
+      cleanedOrder.fulfillment_status = status;
+    } else {
+      cleanedOrder.fulfillment_status = 'unfulfilled';
+    }
+  }
 };
 
 // CREATE webhook
 const orderCreated = async (req, res) => {
   const webhookOrder = req.body;
-  console.log('📦 Webhook – CREATE prijatý:', webhookOrder.name || webhookOrder.id);
+  console.log('📦 Webhook – CREATE received:', webhookOrder.name || webhookOrder.id);
 
   try {
     const existing = await Order.findOne({ id: webhookOrder.id });
     if (existing) {
-      console.log(`⏭️ CREATE: Objednávka ${webhookOrder.name || webhookOrder.id} už existuje – preskakuje sa.`);
+      console.log(`⏭️ CREATE: Order ${webhookOrder.name || webhookOrder.id} already exists – skipping.`);
       return res.status(200).send('Already exists');
     }
 
-    const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 3, 2000);
+    const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id);
     if (!fullOrder) return res.status(500).send('Failed to fetch full order');
 
     const cleanedOrder = await cleanOrder(fullOrder, metafields);
-    await Order.create(cleanedOrder);
+    resolveFallbackFulfillment(fullOrder, cleanedOrder);
 
-    console.log(`✅ CREATE: Objednávka ${cleanedOrder.name || cleanedOrder.id} bola pridaná.`);
+    await Order.create(cleanedOrder);
+    console.log(`✅ CREATE: Order ${cleanedOrder.name || cleanedOrder.id} added.`);
     res.status(200).send('CREATE OK');
   } catch (err) {
     console.error(`❌ CREATE ERROR – ${webhookOrder.name || webhookOrder.id}: ${err.message}`);
@@ -83,31 +94,40 @@ const orderCreated = async (req, res) => {
 // UPDATE webhook
 const orderUpdated = async (req, res) => {
   const webhookOrder = req.body;
-  console.log('🔁 Webhook – UPDATE prijatý:', webhookOrder.name || webhookOrder.id);
+  console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
 
   try {
     const existing = await Order.findOne({ id: webhookOrder.id });
 
-    if (existing) {
-      const dbTime = new Date(existing.updated_at).getTime();
-      const apiTime = new Date(webhookOrder.updated_at).getTime();
-      if (dbTime === apiTime) {
-        console.log(`⏭️ UPDATE: Objednávka ${webhookOrder.name || webhookOrder.id} sa nezmenila – preskakuje sa.`);
+    if (!existing) {
+      console.log(`➕ UPDATE: Order ${webhookOrder.name || webhookOrder.id} not found – creating new.`);
+    } else {
+      const isDifferent = [
+        'order_number',
+        'fulfillment_status',
+        'assignee_1', 'assignee_2', 'assignee_3', 'assignee_4',
+        'progress_1', 'progress_2', 'progress_3', 'progress_4',
+      ].some(field => existing[field] !== webhookOrder[field]);
+
+      if (!isDifferent) {
+        console.log(`⏭️ UPDATE: Order ${webhookOrder.name || webhookOrder.id} has no relevant changes – skipping.`);
         return res.status(200).send('No changes');
       }
     }
 
-    const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 3, 2000);
+    const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id);
     if (!fullOrder) return res.status(500).send('Failed to fetch full order');
 
     const cleanedOrder = await cleanOrder(fullOrder, metafields);
+    resolveFallbackFulfillment(fullOrder, cleanedOrder);
+
     await Order.updateOne(
       { id: cleanedOrder.id },
       { $set: cleanedOrder },
       { upsert: true }
     );
 
-    console.log(`✅ UPDATE: Objednávka ${cleanedOrder.name || cleanedOrder.id} bola aktualizovaná.`);
+    console.log(`✅ UPDATE: Order ${cleanedOrder.name || cleanedOrder.id} updated.`);
     res.status(200).send('UPDATE OK');
   } catch (err) {
     console.error(`❌ UPDATE ERROR – ${webhookOrder.name || webhookOrder.id}: ${err.message}`);
