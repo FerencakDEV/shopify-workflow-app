@@ -4,6 +4,20 @@ function cleanOrder(order, metafields = []) {
     metafieldMap[mf.key] = mf.value;
   }
 
+  // fallback fulfillment_status logika
+  let fulfillmentStatus = order.fulfillment_status || null;
+  const orderStatus = (metafieldMap['order-custom-status'] || '').toLowerCase();
+
+  if (fulfillmentStatus === null) {
+    if (orderStatus === 'cancelled') {
+      fulfillmentStatus = 'fulfilled';
+    } else if (orderStatus === 'onhold' || orderStatus === 'ready for pickup') {
+      fulfillmentStatus = orderStatus;
+    } else {
+      fulfillmentStatus = 'unfulfilled';
+    }
+  }
+
   return {
     id: order.id,
     name: order.name,
@@ -15,7 +29,7 @@ function cleanOrder(order, metafields = []) {
       last_name: order.customer?.last_name || ''
     },
     financial_status: order.financial_status || '',
-    fulfillment_status: order.fulfillment_status || null,
+    fulfillment_status: fulfillmentStatus,
     line_items: order.line_items || [],
     created_at: order.created_at,
     updated_at: order.updated_at,
@@ -24,7 +38,7 @@ function cleanOrder(order, metafields = []) {
     order_number: order.order_number || '',
     tags: Array.isArray(order.tags) ? order.tags : [order.tags || ''],
     total_price: order.total_price || '',
-    
+
     // ASSIGNEE
     assignee: [
       metafieldMap['assignee-1'] || '',
@@ -50,8 +64,8 @@ function cleanOrder(order, metafields = []) {
     progress_4: metafieldMap['progress-4'] || '',
 
     // STATUS
-    custom_status: '', // nastavuješ cez logiku inde (napr. CRON)
-    order_status: 'new order', // alebo podľa potreby
+    custom_status: '', // nastavuješ cez vlastnú logiku
+    order_status: metafieldMap['order-custom-status'] || 'new order',
     is_urgent: metafieldMap['urgent'] === 'true' || false,
 
     // Časy
