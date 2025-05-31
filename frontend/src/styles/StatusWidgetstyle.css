@@ -12,7 +12,7 @@
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   box-sizing: border-box;
   box-shadow: 0 2px 5px rgb(0 0 0 / 0.08);
-  position: relative;
+  position: relative !important;
   overflow: visible !important;
   z-index: 1;
 }
@@ -20,7 +20,7 @@
 .status-widget:hover {
   transform: scale(1.05);
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
-  z-index: 10;
+  z-index: 999 !important;
 }
 
 .widget-content {
