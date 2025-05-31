@@ -1,6 +1,5 @@
-// WorkloadChart.tsx
 import React from 'react';
-import '../styles/StatusWidgetstyle.css';
+import '../styles/WorkloadChart.css';
 
 const mockData = [
   {
