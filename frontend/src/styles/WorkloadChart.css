@@ -1,11 +1,11 @@
-.full-height {
-  height: 100%;
-}
 .workload-container {
+  width: 100%;
+  height: 100%;
   padding: 24px;
   background-color: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
 }
 
 .workload-header {
@@ -38,36 +38,37 @@
 .workload-chart {
   display: flex;
   flex-direction: row;
-  flex-wrap: nowrap; /* Dôležité – žiadne zalomenie */
+  flex-wrap: nowrap;
   gap: 32px;
-  overflow-x: auto; /* scroll horizontálne ak treba */
+  overflow-x: auto;
   overflow-y: hidden;
-  width: 100%;
+  width: max-content; /* Zabezpečí, že sa nezalamuje a rozšíri sa podľa obsahu */
   padding-bottom: 12px;
 }
 
 .chart-column {
-  flex: 1 0 120px;
-  max-width: 140px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.chart-column {
-  flex: 0 0 auto; /* presne taká šírka, akú potrebuje */
+  flex: 0 0 auto;
   width: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+}
+
+.chart-counts {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0;
+  font-weight: 600;
+  justify-content: center;
 }
 
 .count-inprogress {
-  color: #f97316; /* orange */
+  color: #f97316;
 }
 
 .count-assigned {
-  color: #9ca3af; /* gray */
+  color: #9ca3af;
 }
 
 .count-divider {
@@ -114,19 +115,4 @@
 .order-assigned {
   color: #9ca3af;
   margin-bottom: 2px;
-}
-.chart-section {
-  flex: 1;
-  min-width: 600px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.workload-chart.expanded {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  gap: 40px;
-  padding-bottom: 20px;
-  overflow-x: hidden;
 }
