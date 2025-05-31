@@ -1,4 +1,4 @@
-html{
+html {
   width: 100vw;
   height: 100vh;
 }
@@ -19,23 +19,24 @@ html{
   width: 50%;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: 110px;   /* menšia výška widgetu */
-  gap: 10px;  
-  min-width: 400px;             /* minimalizované medzery */
+  grid-auto-rows: 110px;
+  gap: 10px;
+  min-width: 400px;
   overflow-y: hidden;
   box-sizing: border-box;
   overflow: visible !important;
 }
 
 .chart-section {
-  width: 50%;
-  min-width: 500px;
+  flex: 1;
   height: 100%;
   background: #f8f9fa;
   border-radius: 12px;
   padding: 24px;
   box-sizing: border-box;
-  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 900px) {
@@ -58,33 +59,215 @@ html{
 }
 
 /* Farby pozadí podľa zadania */
-.bg-muted {
-  background-color: #6c757d;
+.bg-muted { background-color: #6c757d; }
+.bg-primary-light { background-color: #5bc0de; }
+.bg-warning { background-color: #f0ad4e; }
+.bg-info { background-color: #5bc0de; }
+.bg-smooth { background-color: #66cdaa; }
+.bg-city { background-color: #007bff; }
+.bg-city-light { background-color: #66b2ff; }
+.bg-primary-darker { background-color: #004085; }
+.bg-primary-dark { background-color: #003366; }
+.bg-success { background-color: #28a745; }
+
+.full-height {
+  height: 100%;
 }
-.bg-primary-light {
-  background-color: #5bc0de;
+
+.workload-container {
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
 }
-.bg-warning {
-  background-color: #f0ad4e;
+
+.workload-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
-.bg-info {
-  background-color: #5bc0de;
+
+.workload-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #222;
 }
-.bg-smooth {
-  background-color: #66cdaa;
+
+.workload-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-left: 8px;
 }
-.bg-city {
-  background-color: #007bff;
+
+.workload-badge {
+  background-color: #14b8a6;
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
 }
-.bg-city-light {
-  background-color: #66b2ff;
+
+.workload-chart {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 32px;
+  padding-bottom: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
-.bg-primary-darker {
-  background-color: #004085;
+
+.chart-column {
+  flex: 1 0 120px;
+  max-width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
-.bg-primary-dark {
-  background-color: #003366;
+
+.chart-counts {
+  display: flex;
+  gap: 4px;
+  margin: 6px 0;
+  font-weight: 600;
+  justify-content: center;
 }
-.bg-success {
-  background-color: #28a745;
+
+.count-inprogress {
+  color: #f97316;
 }
+
+.count-assigned {
+  color: #9ca3af;
+}
+
+.count-divider {
+  color: #888;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 160px;
+}
+
+.bar-inprogress {
+  width: 16px;
+  background-color: #f97316;
+  border-radius: 4px;
+}
+
+.bar-assigned {
+  width: 16px;
+  background-color: #d1d5db;
+  border-radius: 4px;
+}
+
+.chart-assignee {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.chart-orders {
+  margin-top: 6px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.order-inprogress {
+  color: #f97316;
+  margin-bottom: 2px;
+}
+
+.order-assigned {
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+
+.status-widget {
+  padding: 16px 20px;
+  border-radius: 10px;
+  background-color: #f5f7fa;
+  color: #222;
+  font-weight: 600;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  align-items: center;
+  height: 110px;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-sizing: border-box;
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.08);
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 1;
+  padding-left: 20px;
+}
+
+.status-widget:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+  z-index: 999 !important;
+}
+
+.widget-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.widget-count {
+  font-size: 82.5px;
+  line-height: 1;
+  flex: 1;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  color: #111;
+  font-weight: 700;
+}
+
+.widget-text {
+  flex: 2;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  color: #222;
+}
+
+.widget-label {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.widget-sublabel {
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+/* Colors – nastav podľa potreby, tu sú neutrálne pozadia */
+.blue        { background-color: #d9e9f7; }
+.red-dark    { background-color: #f2d7dc; }
+.blue-light  { background-color: #d7e9f7; }
+.orange      { background-color: #f8d8c0; }
+.green-light { background-color: #e6f0b0; }
+.brown       { background-color: #d8c1a2; }
+.purple      { background-color: #d7c5e6; }
+.pink        { background-color: #f9d9e2; }
+.dark        { background-color: #d9dae0; }
+.red         { background-color: #f7c4c1; }
+.black       { background-color: #d7d8db; }
+.green       { background-color: #c7e7ca; }
