@@ -11,50 +11,77 @@ const Order = require('../models/Order');
 
     const orders = await Order.find();
 
-    const stats = {
-      fulfillment_status: {},
-      custom_status: {},
-      order_status: {},
-      assignee: {},
-      progress: {}
+    const widgetStats = {
+      newOrders: 0,
+      urgentNewOrders: 0,
+      assignedOrders: 0,
+      inProgress: 0,
+      finishingBinding: 0,
+      toBeChecked: 0,
+      readyForDispatch: 0,
+      readyForPickup: 0,
+      onHold: 0,
+      needAttention: 0,
+      fulfilled: 0
     };
 
-    for (const o of orders) {
-      const fs = o.fulfillment_status || 'unknown';
-      const cs = o.custom_status || 'unknown';
-      const os = o.order_status || 'unknown';
+    for (const order of orders) {
+      const cs = order.custom_status || 'unknown';
+      const fs = order.fulfillment_status || 'unknown';
 
-      stats.fulfillment_status[fs] = (stats.fulfillment_status[fs] || 0) + 1;
-      stats.custom_status[cs] = (stats.custom_status[cs] || 0) + 1;
-      stats.order_status[os] = (stats.order_status[os] || 0) + 1;
+      const progresses = [
+        order.progress_1,
+        order.progress_2,
+        order.progress_3,
+        order.progress_4
+      ].filter(Boolean).map(p => p.toLowerCase());
 
-      for (let i = 1; i <= 4; i++) {
-        const a = o[`assignee_${i}`];
-        if (a) stats.assignee[a] = (stats.assignee[a] || 0) + 1;
-
-        const p = o[`progress_${i}`];
-        if (p) stats.progress[p] = (stats.progress[p] || 0) + 1;
+      // Fulfilled = nemá byť nikde vo widgetoch
+      if (fs === 'fulfilled' || cs === 'fulfilled') {
+        widgetStats.fulfilled++;
+        continue;
       }
+
+      const hasAnyProgress = progresses.length > 0;
+
+      // NEW ORDER
+      if (cs === 'New Order' && !hasAnyProgress) widgetStats.newOrders++;
+
+      // URGENT NEW ORDER
+      if (cs === 'Urgent New Order' && !hasAnyProgress) widgetStats.urgentNewOrders++;
+
+      // Assigned – ak je aspoň jedno "assigned"
+      if (progresses.includes('assigned')) widgetStats.assignedOrders++;
+
+      // In Progress
+      if (progresses.includes('in progress')) widgetStats.inProgress++;
+
+      // Finishing & Binding
+      if (progresses.includes('finishing & binding')) widgetStats.finishingBinding++;
+
+      // To be Checked
+      if (progresses.includes('to be checked')) widgetStats.toBeChecked++;
+
+      // Ready for Dispatch
+      if (progresses.includes('ready for dispatch')) widgetStats.readyForDispatch++;
+
+      // Ready for Pickup
+      if (progresses.includes('ready for pickup')) widgetStats.readyForPickup++;
+
+      // On Hold (iba podľa custom_status)
+      if (cs === 'On Hold') widgetStats.onHold++;
+
+      // Need Attention (iba podľa custom_status)
+      if (cs === 'Need Attention') widgetStats.needAttention++;
     }
 
-    console.log('📦 Fulfillment Status:');
-    console.table(stats.fulfillment_status);
-
-    console.log('📦 Custom Status (widgety):');
-    console.table(stats.custom_status);
-
-    console.log('📦 Order Status (z metafields):');
-    console.table(stats.order_status);
-
-    console.log('👷 Assignees:');
-    console.table(stats.assignee);
-
-    console.log('📈 Progress statusy:');
-    console.table(stats.progress);
+    console.log('📊 Výsledné widgety podľa logiky dashboardu:\n');
+    console.table(widgetStats);
 
     process.exit(0);
   } catch (err) {
     console.error('❌ Chyba:', err.message);
     process.exit(1);
   }
+  
 })();
