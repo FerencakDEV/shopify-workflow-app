@@ -1,113 +1,105 @@
-function cleanOrder(order, metafields = []) {
-  const metafieldMap = {};
-  for (const mf of metafields) {
-    metafieldMap[mf.key] = mf.value;
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../backend/.env') });
+
+const mongoose = require('mongoose');
+const axios = require('axios');
+const Order = require('../models/Order');
+const CronLog = require('../models/CronLog');
+const { cleanOrder } = require('./cleanOrder');
+const { SHOPIFY_API_URL, HEADERS } = require('../config/constants');
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const fetchMetafields = async (orderId) => {
+  try {
+    const url = `${SHOPIFY_API_URL}/orders/${orderId}/metafields.json`;
+    const res = await axios.get(url, { headers: HEADERS });
+    return res.data.metafields || [];
+  } catch (err) {
+    console.warn(`⚠️ Metafields fetch failed for Order ${orderId}: ${err.message}`);
+    return [];
   }
+};
 
-  // fallback fulfillment_status logika
-  let fulfillmentStatus = order.fulfillment_status || null;
-  const orderStatusRaw = metafieldMap['order-custom-status'] || '';
-  const orderStatus = orderStatusRaw.toLowerCase();
-  const isUrgent = metafieldMap['urgent'] === 'true';
+const runCronSync = async () => {
+  console.log('🔧 CRON štartuje...');
+  let nextUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any&order=created_at desc`;
 
-  if (fulfillmentStatus === null || fulfillmentStatus === 'null') {
-    if (orderStatus === 'cancelled') {
-      fulfillmentStatus = 'fulfilled';
-    } else if (orderStatus === 'on hold') {
-      fulfillmentStatus = 'on hold';
-    } else if (orderStatus === 'ready for pickup') {
-      fulfillmentStatus = 'ready for pickup';
-    } else {
-      fulfillmentStatus = 'unfulfilled';
+  const added = [], updated = [], unchanged = [];
+
+  try {
+    while (nextUrl) {
+      const response = await axios.get(nextUrl, { headers: HEADERS });
+      const orders = response.data.orders;
+
+      for (const order of orders) {
+        const existing = await Order.findOne({ id: Number(order.id) });
+        await delay(150);
+
+        const metafields = await fetchMetafields(order.id);
+        const cleaned = cleanOrder(order, metafields);
+
+        if (!cleaned.fulfillment_status || cleaned.fulfillment_status === 'null') {
+          const status = cleaned.custom_status?.toLowerCase() || '';
+          if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
+          else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
+          else if (status.includes('on hold')) cleaned.fulfillment_status = 'on hold';
+          else cleaned.fulfillment_status = 'unfulfilled';
+        }
+
+        if (!existing) {
+          await Order.create(cleaned);
+          added.push(cleaned.order_number || cleaned.id);
+          console.log(`✅ Pridaná NOVÁ objednávka: ${cleaned.order_number}`);
+        } else {
+          const changed =
+            JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
+            JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
+            existing.order_number !== cleaned.order_number ||
+            existing.fulfillment_status !== cleaned.fulfillment_status ||
+            existing.custom_status !== cleaned.custom_status;
+
+          if (changed) {
+            await Order.updateOne({ id: order.id }, { $set: cleaned });
+            updated.push(cleaned.order_number || cleaned.id);
+            console.log(`🔄 Aktualizovaná objednávka: ${cleaned.order_number}`);
+          } else {
+            unchanged.push(cleaned.order_number || cleaned.id);
+          }
+        }
+      }
+
+      // stránkovanie – pokračujeme, ak je ďalšia stránka
+      const linkHeader = response.headers.link;
+      const match = linkHeader?.match(/<([^>]+)>;\s*rel="next"/);
+      nextUrl = match ? match[1] : null;
     }
+
+    // Zapíš CRON log
+    await CronLog.create({
+      timestamp: new Date(),
+      added,
+      updated,
+      unchanged,
+      runBy: 'render-cron'
+    });
+
+    console.log(`\n📊 Súhrn:`);
+    console.log(`➕ Pridané nové: ${added.length}`);
+    console.log(`🔄 Aktualizované: ${updated.length}`);
+    console.log(`⏭️ Nezmenené: ${unchanged.length}`);
+  } catch (err) {
+    console.error('❌ Chyba CRON behu:', err.message);
   }
+};
 
-  // custom_status podľa logiky dashboard widgetov
-  let customStatus = 'New Order';
-
-  if (orderStatus === 'cancelled') {
-    customStatus = 'Cancelled';
-  } else if (fulfillmentStatus === 'fulfilled') {
-    customStatus = 'Fulfilled';
-  } else if (fulfillmentStatus === 'partial') {
-    customStatus = 'Partially Fulfilled';
-  } else if (orderStatus === 'on hold' || fulfillmentStatus === 'on hold') {
-    fulfillmentStatus = 'on hold';
-    customStatus = 'On Hold';
-  } else if (orderStatus === 'ready for pickup' || fulfillmentStatus === 'ready for pickup') {
-    fulfillmentStatus = 'ready for pickup';
-    customStatus = 'Ready for Pickup';
-  } else if (isUrgent || orderStatus === 'urgent new order') {
-    customStatus = 'Urgent New Order';
-  } else if (orderStatus === 'assigned order') {
-    customStatus = 'Assigned Order';
-  } else if (orderStatus === 'finishing & binding') {
-    customStatus = 'Finishing & Binding';
-  } else if (orderStatus === 'to be checked') {
-    customStatus = 'To be Checked';
-  } else if (orderStatus === 'in progress') {
-    customStatus = 'In Progress';
-  } else if (orderStatus === 'ready for dispatch') {
-    customStatus = 'Ready for Dispatch';
-  } else if (orderStatus === 'need attention') {
-    customStatus = 'Need Attention';
-  } else {
-    customStatus = 'New Order';
-  }
-
-  return {
-    id: order.id,
-    name: order.name,
-    email: order.email || order.customer?.email || '',
-    customer: {
-      id: order.customer?.id || '',
-      email: order.customer?.email || '',
-      first_name: order.customer?.first_name || '',
-      last_name: order.customer?.last_name || ''
-    },
-    financial_status: order.financial_status || '',
-    fulfillment_status: fulfillmentStatus,
-    line_items: order.line_items || [],
-    created_at: order.created_at,
-    updated_at: order.updated_at,
-    processed_at: order.processed_at || null,
-    note: order.note || null,
-    order_number: order.order_number || '',
-    tags: Array.isArray(order.tags) ? order.tags : [order.tags || ''],
-    total_price: order.total_price || '',
-
-    assignee: [
-      metafieldMap['assignee-1'] || '',
-      metafieldMap['assignee-2'] || '',
-      metafieldMap['assignee-3'] || '',
-      metafieldMap['assignee-4'] || ''
-    ],
-    assignee_1: metafieldMap['assignee-1'] || '',
-    assignee_2: metafieldMap['assignee-2'] || '',
-    assignee_3: metafieldMap['assignee-3'] || '',
-    assignee_4: metafieldMap['assignee-4'] || '',
-
-    progress: [
-      metafieldMap['progress-1'] || '',
-      metafieldMap['progress-2'] || '',
-      metafieldMap['progress-3'] || '',
-      metafieldMap['progress-4'] || ''
-    ],
-    progress_1: metafieldMap['progress-1'] || '',
-    progress_2: metafieldMap['progress-2'] || '',
-    progress_3: metafieldMap['progress-3'] || '',
-    progress_4: metafieldMap['progress-4'] || '',
-
-    custom_status: customStatus,
-    order_status: orderStatusRaw || 'New Order',
-    is_urgent: isUrgent,
-
-    expected_time: metafieldMap['expected_time'] || '',
-    expected_time_1: metafieldMap['expected_time-1'] || '',
-
-    metafields: metafieldMap,
-    changelog: [],
-  };
+if (require.main === module) {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(async () => {
+      console.log('✅ Pripojené k MongoDB');
+      await runCronSync();
+      mongoose.connection.close();
+    })
+    .catch(err => {
+      console.error('❌ MongoDB chyba:', err.message);
+    });
 }
-
-module.exports = { cleanOrder };
