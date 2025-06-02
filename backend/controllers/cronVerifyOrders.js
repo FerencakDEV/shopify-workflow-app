@@ -1,5 +1,3 @@
-// backend/controllers/cronVerifyOrders.js
-
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../backend/.env') });
 
 const mongoose = require('mongoose');
@@ -27,51 +25,56 @@ const runCronSync = async () => {
   const now = new Date().toLocaleString('sk-SK', { timeZone: 'Europe/Bratislava' });
   console.log(`\n🕒 CRON spustený: ${now}`);
 
-  const url = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any&order=id desc`;
+  let nextUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any&order=created_at desc`;
   const added = [], updated = [], unchanged = [];
 
   try {
-    const response = await axios.get(url, { headers: HEADERS });
-    const orders = response.data.orders;
+    while (nextUrl) {
+      const response = await axios.get(nextUrl, { headers: HEADERS });
+      const orders = response.data.orders;
 
-    console.log(`🔁 CRON: Kontrola ${orders.length} posledných objednávok`);
+      for (const order of orders) {
+        const existing = await Order.findOne({ id: order.id });
+        await delay(300);
 
-    for (const order of orders) {
-      const existing = await Order.findOne({ id: order.id });
-      await delay(300);
+        const metafields = await fetchMetafields(order.id);
+        const cleaned = cleanOrder(order, metafields);
 
-      const metafields = await fetchMetafields(order.id);
-      const cleaned = cleanOrder(order, metafields);
+        if (!cleaned.fulfillment_status || cleaned.fulfillment_status === 'null') {
+          const status = cleaned.custom_status?.toLowerCase() || '';
+          if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
+          else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
+          else if (status.includes('on hold')) cleaned.fulfillment_status = 'on hold';
+          else cleaned.fulfillment_status = 'unfulfilled';
+        }
 
-      // 🔧 Fulfillment oprav
-      if (!cleaned.fulfillment_status || cleaned.fulfillment_status === null) {
-        const status = cleaned.custom_status?.toLowerCase() || '';
-        if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
-        else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
-        else if (status.includes('onhold')) cleaned.fulfillment_status = 'onhold';
-        else cleaned.fulfillment_status = 'unfulfilled';
+        if (!existing) {
+          await Order.create(cleaned);
+          added.push(cleaned.order_number || cleaned.id);
+          console.log(`✅ Pridaná objednávka: ${cleaned.order_number}`);
+          continue;
+        }
+
+        const changed =
+          JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
+          JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
+          existing.order_number !== cleaned.order_number ||
+          existing.fulfillment_status !== cleaned.fulfillment_status ||
+          existing.custom_status !== cleaned.custom_status;
+
+        if (changed) {
+          await Order.updateOne({ id: order.id }, { $set: cleaned });
+          updated.push(cleaned.order_number || cleaned.id);
+          console.log(`🔄 Aktualizovaná objednávka: ${cleaned.order_number}`);
+        } else {
+          unchanged.push(cleaned.order_number || cleaned.id);
+        }
       }
 
-      if (!existing) {
-        await Order.create(cleaned);
-        added.push(cleaned.order_number || cleaned.id);
-        console.log(`✅ Pridaná objednávka: ${cleaned.order_number}`);
-        continue;
-      }
-
-      const changed =
-        JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
-        JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
-        existing.order_number !== cleaned.order_number ||
-        existing.fulfillment_status !== cleaned.fulfillment_status;
-
-      if (changed) {
-        await Order.updateOne({ id: order.id }, { $set: cleaned });
-        updated.push(cleaned.order_number || cleaned.id);
-        console.log(`🔄 Aktualizovaná objednávka: ${cleaned.order_number}`);
-      } else {
-        unchanged.push(cleaned.order_number || cleaned.id);
-      }
+      // ➡️ Zistenie next page (paginácia)
+      const linkHeader = response.headers.link;
+      const match = linkHeader?.match(/<([^>]+)>;\s*rel="next"/);
+      nextUrl = match ? match[1] : null;
     }
 
     console.log(`\n📊 Súhrn výsledkov:`);
