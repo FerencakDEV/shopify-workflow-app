@@ -24,20 +24,29 @@ const runCronSync = async () => {
   console.log('🔧 CRON štartuje...');
   const now = new Date().toISOString();
 
-  const maxExistingOrder = await Order.findOne().sort({ id: -1 });
-  const maxKnownId = maxExistingOrder?.id || 0;
+  const lastRunLog = await CronLog.findOne().sort({ timestamp: -1 });
+  const lastRunDate = lastRunLog?.timestamp || new Date('2000-01-01');
 
-  console.log(`🧠 Najvyššie ID v databáze: ${maxKnownId}`);
+  console.log(`🔁 Posledný záznam: ${lastRunDate.toISOString()}`);
 
   let nextUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any&order=created_at desc`;
   const added = [], updated = [], unchanged = [];
 
+  let processedCount = 0;
+  const maxOrders = 700;
+
   try {
-    while (nextUrl) {
+    while (nextUrl && processedCount < maxOrders) {
       const response = await axios.get(nextUrl, { headers: HEADERS });
       const orders = response.data.orders;
 
       for (const order of orders) {
+        if (processedCount >= maxOrders) break;
+        processedCount++;
+
+        const orderCreated = new Date(order.created_at);
+        const isNew = orderCreated > lastRunDate;
+
         const existing = await Order.findOne({ id: Number(order.id) });
         await delay(200);
 
@@ -53,12 +62,12 @@ const runCronSync = async () => {
         }
 
         if (!existing) {
-          if (Number(order.id) > maxKnownId) {
+          if (isNew) {
             await Order.create(cleaned);
             added.push(cleaned.order_number || cleaned.id);
-            console.log(`✅ NOVÁ objednávka pridaná: ${cleaned.order_number}`);
+            console.log(`✅ Pridaná NOVÁ objednávka: ${cleaned.order_number}`);
           } else {
-            console.log(`⏭️ Staršia objednávka ${order.id} – preskočená.`);
+            console.log(`⏭️ Staršia objednávka ${cleaned.order_number} – nebola pridaná.`);
           }
           continue;
         }
@@ -79,13 +88,11 @@ const runCronSync = async () => {
         }
       }
 
-      // stránkovanie
       const linkHeader = response.headers.link;
       const match = linkHeader?.match(/<([^>]+)>;\s*rel="next"/);
       nextUrl = match ? match[1] : null;
     }
 
-    // log do CronLog kolekcie
     await CronLog.create({
       timestamp: new Date(),
       added,
@@ -95,11 +102,12 @@ const runCronSync = async () => {
     });
 
     console.log(`\n📊 Súhrn CRON behu:`);
+    console.log(`🧾 Spracovaných objednávok: ${processedCount}`);
     console.log(`➕ Pridané nové: ${added.length}`);
     console.log(`🔄 Aktualizované: ${updated.length}`);
     console.log(`⏭️ Nezmenené: ${unchanged.length}`);
   } catch (err) {
-    console.error('❌ Chyba počas CRON behu:', err.message);
+    console.error('❌ Chyba CRON behu:', err.message);
   }
 };
 
