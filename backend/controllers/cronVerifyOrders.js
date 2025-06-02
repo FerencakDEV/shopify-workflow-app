@@ -8,7 +8,7 @@ const { cleanOrder } = require('./cleanOrder');
 const { SHOPIFY_API_URL, HEADERS } = require('../config/constants');
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-const MAX_ORDERS = 750;
+const MAX_ORDERS = 250;
 
 const fetchMetafields = async (orderId) => {
   try {
@@ -23,52 +23,49 @@ const fetchMetafields = async (orderId) => {
 
 const runCronSync = async () => {
   console.log('🔧 CRON štartuje...');
-  let nextUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any&order=created_at desc`;
+  const url = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any&order=created_at desc`;
 
   const added = [], updated = [], unchanged = [];
-  let totalProcessed = 0;
 
   try {
-    while (nextUrl && totalProcessed < MAX_ORDERS) {
-      const response = await axios.get(nextUrl, { headers: HEADERS });
-      const orders = response.data.orders;
+    const response = await axios.get(url, { headers: HEADERS });
+    const orders = response.data.orders;
 
-      for (const order of orders) {
-        if (totalProcessed >= MAX_ORDERS) break;
+    for (const order of orders) {
+      const existing = await Order.findOne({ id: Number(order.id) });
+      await delay(300); // spomalene kvôli rate limitom
 
-        const existing = await Order.findOne({ id: Number(order.id) });
-        await delay(150);
+      const metafields = await fetchMetafields(order.id);
+      const cleaned = cleanOrder(order, metafields);
 
-        const metafields = await fetchMetafields(order.id);
-        const cleaned = cleanOrder(order, metafields); // použije už aktualizovanú logiku
-
-        if (!existing) {
-          await Order.create(cleaned);
-          added.push(cleaned.order_number || cleaned.id);
-          console.log(`✅ Pridaná NOVÁ objednávka: ${cleaned.order_number}`);
-        } else {
-          const changed =
-            JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
-            JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
-            existing.order_number !== cleaned.order_number ||
-            existing.fulfillment_status !== cleaned.fulfillment_status ||
-            existing.custom_status !== cleaned.custom_status;
-
-          if (changed) {
-            await Order.updateOne({ id: order.id }, { $set: cleaned });
-            updated.push(cleaned.order_number || cleaned.id);
-            console.log(`🔄 Aktualizovaná objednávka: ${cleaned.order_number}`);
-          } else {
-            unchanged.push(cleaned.order_number || cleaned.id);
-          }
-        }
-
-        totalProcessed++;
+      if (!cleaned.fulfillment_status || cleaned.fulfillment_status === 'null') {
+        const status = cleaned.custom_status?.toLowerCase() || '';
+        if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
+        else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
+        else if (status.includes('on hold')) cleaned.fulfillment_status = 'on hold';
+        else cleaned.fulfillment_status = 'unfulfilled';
       }
 
-      const linkHeader = response.headers.link;
-      const match = linkHeader?.match(/<([^>]+)>;\s*rel="next"/);
-      nextUrl = match ? match[1] : null;
+      if (!existing) {
+        await Order.create(cleaned);
+        added.push(cleaned.order_number || cleaned.id);
+        console.log(`✅ Pridaná NOVÁ objednávka: ${cleaned.order_number}`);
+      } else {
+        const changed =
+          JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
+          JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
+          existing.order_number !== cleaned.order_number ||
+          existing.fulfillment_status !== cleaned.fulfillment_status ||
+          existing.custom_status !== cleaned.custom_status;
+
+        if (changed) {
+          await Order.updateOne({ id: order.id }, { $set: cleaned });
+          updated.push(cleaned.order_number || cleaned.id);
+          console.log(`🔄 Aktualizovaná objednávka: ${cleaned.order_number}`);
+        } else {
+          unchanged.push(cleaned.order_number || cleaned.id);
+        }
+      }
     }
 
     await CronLog.create({
@@ -79,11 +76,10 @@ const runCronSync = async () => {
       runBy: 'render-cron'
     });
 
-    console.log(`\n📊 Súhrn CRON:`);
+    console.log(`\n📊 Súhrn CRON:`)
     console.log(`➕ Pridané: ${added.length}`);
     console.log(`🔄 Aktualizované: ${updated.length}`);
     console.log(`⏭️ Nezmenené: ${unchanged.length}`);
-    console.log(`📦 Celkom spracovaných: ${totalProcessed}`);
   } catch (err) {
     console.error('❌ Chyba CRON behu:', err.message);
   }
