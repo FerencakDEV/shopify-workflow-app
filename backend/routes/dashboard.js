@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
+// Pomocná funkcia na očistenie stringov (lowercase, trim, medzery)
+const normalize = str =>
+  (str || '').toLowerCase().trim().replace(/\s+/g, ' ');
+
 router.get('/status-counts', async (req, res) => {
   try {
     const orders = await Order.find({}, {
@@ -33,96 +37,106 @@ router.get('/status-counts', async (req, res) => {
       allOrders: orders.length
     };
 
-    const getProgressArray = (order) => [
-      (order.progress_1 || '').trim(),
-      (order.progress_2 || '').trim(),
-      (order.progress_3 || '').trim(),
-      (order.progress_4 || '').trim()
-    ].filter(p => p !== '');
-
-    const getAssigneeArray = (order) => [
-      (order.assignee_1 || '').trim(),
-      (order.assignee_2 || '').trim(),
-      (order.assignee_3 || '').trim(),
-      (order.assignee_4 || '').trim()
-    ].filter(a => a !== '');
-
     orders.forEach(order => {
-      const status = (order.fulfillment_status || '').toLowerCase();
-      const customStatus = order.order_status || '';
+      const fulfillment = normalize(order.fulfillment_status);
+      const orderStatus = normalize(order.order_status);
       const isUrgent = order.is_urgent === true;
-      const progresses = getProgressArray(order);
-      const assignees = getAssigneeArray(order);
 
-      if (['fulfilled', 'cancelled'].includes(status)) return;
+      const progresses = [
+        order.progress_1,
+        order.progress_2,
+        order.progress_3,
+        order.progress_4
+      ]
+        .map(p => normalize(p))
+        .filter(Boolean);
+
+      const assignees = [
+        order.assignee_1,
+        order.assignee_2,
+        order.assignee_3,
+        order.assignee_4
+      ]
+        .map(a => normalize(a))
+        .filter(Boolean);
+
+      const hasAssignee = assignees.length > 0;
+      const hasProgress = progresses.length > 0;
+
+      // Fulfilled alebo Cancelled → ignoruj
+      if (['fulfilled', 'cancelled'].includes(fulfillment)) return;
 
       // ON HOLD
-      if (status === 'onhold' || customStatus === 'On Hold') {
+      if (fulfillment === 'onhold' || orderStatus === 'on hold') {
         counts.onHold += 1;
+        return;
       }
 
       // READY FOR PICKUP
-      if (status === 'ready for pickup' || customStatus === 'Ready for Pickup') {
+      if (fulfillment === 'ready for pickup' || orderStatus === 'ready for pickup') {
         counts.readyForPickup += 1;
+        return;
       }
 
-      const noProgress = progresses.length === 0;
-      const noAssignee = assignees.length === 0;
-
       // URGENT NEW ORDER
-      if ((customStatus === 'Urgent New Order' || isUrgent) && noProgress && noAssignee) {
+      if ((orderStatus === 'urgent new order' || isUrgent) && !hasAssignee && !hasProgress) {
         counts.urgentNewOrders += 1;
+        return;
       }
 
       // NEW ORDER
-      if (customStatus === 'New Order' && !isUrgent && noProgress && noAssignee) {
+      if (orderStatus === 'new order' && !isUrgent && !hasAssignee && !hasProgress) {
         counts.newOrders += 1;
+        return;
       }
 
-      // ostatné widgety – môžu byť súčasne viaceré:
-      progresses.forEach(progress => {
-        const key = progress.toLowerCase();
+      // Zarátať do viacerých widgetov podľa progressu
+      let matchedKnownProgress = false;
 
-        switch (key) {
+      progresses.forEach(progress => {
+        switch (progress) {
           case 'assigned':
             counts.assignedOrders += 1;
+            matchedKnownProgress = true;
             break;
           case 'in progress':
             counts.inProgress += 1;
+            matchedKnownProgress = true;
             break;
           case 'printed-done':
             counts.printedDone += 1;
+            matchedKnownProgress = true;
             break;
           case 'finishing & binding':
             counts.finishingBinding += 1;
+            matchedKnownProgress = true;
             break;
           case 'to be checked':
             counts.toBeChecked += 1;
+            matchedKnownProgress = true;
             break;
           case 'ready for dispatch':
             counts.readyForDispatch += 1;
+            matchedKnownProgress = true;
             break;
           case 'ready for pickup':
             counts.readyForPickup += 1;
+            matchedKnownProgress = true;
             break;
           default:
             break;
         }
       });
 
-      // NEED ATTENTION – fallback
-      if (
-        !['On Hold', 'Ready for Pickup'].includes(customStatus) &&
-        (progresses.length > 0 || assignees.length > 0)
-      ) {
-        const matched = progresses.some(p =>
-          ['assigned', 'in progress', 'printed-done', 'finishing & binding', 'to be checked', 'ready for dispatch', 'ready for pickup']
-            .includes(p.toLowerCase())
-        );
+      // Ak má progress alebo assignee, ale žiadny známy progress – NEED ATTENTION
+      if ((hasProgress || hasAssignee) && !matchedKnownProgress) {
+        counts.needAttention += 1;
+        return;
+      }
 
-        if (!matched) {
-          counts.needAttention += 1;
-        }
+      // Posledný fallback – ak naozaj nič nesedí
+      if (!hasProgress && !hasAssignee) {
+        counts.needAttention += 1;
       }
     });
 
