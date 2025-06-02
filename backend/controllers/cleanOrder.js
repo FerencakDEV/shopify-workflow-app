@@ -6,16 +6,53 @@ function cleanOrder(order, metafields = []) {
 
   // fallback fulfillment_status logika
   let fulfillmentStatus = order.fulfillment_status || null;
-  const orderStatus = (metafieldMap['order-custom-status'] || '').toLowerCase();
+  const orderStatusRaw = metafieldMap['order-custom-status'] || '';
+  const orderStatus = orderStatusRaw.toLowerCase();
+  const isUrgent = metafieldMap['urgent'] === 'true';
 
-  if (fulfillmentStatus === null) {
+  if (fulfillmentStatus === null || fulfillmentStatus === 'null') {
     if (orderStatus === 'cancelled') {
       fulfillmentStatus = 'fulfilled';
-    } else if (orderStatus === 'onhold' || orderStatus === 'ready for pickup') {
-      fulfillmentStatus = orderStatus;
+    } else if (orderStatus === 'on hold') {
+      fulfillmentStatus = 'on hold';
+    } else if (orderStatus === 'ready for pickup') {
+      fulfillmentStatus = 'ready for pickup';
     } else {
       fulfillmentStatus = 'unfulfilled';
     }
+  }
+
+  // custom_status podľa logiky dashboard widgetov
+  let customStatus = 'New Order';
+
+  if (orderStatus === 'cancelled') {
+    customStatus = 'Cancelled';
+  } else if (fulfillmentStatus === 'fulfilled') {
+    customStatus = 'Fulfilled';
+  } else if (fulfillmentStatus === 'partial') {
+    customStatus = 'Partially Fulfilled';
+  } else if (orderStatus === 'on hold' || fulfillmentStatus === 'on hold') {
+    fulfillmentStatus = 'on hold';
+    customStatus = 'On Hold';
+  } else if (orderStatus === 'ready for pickup' || fulfillmentStatus === 'ready for pickup') {
+    fulfillmentStatus = 'ready for pickup';
+    customStatus = 'Ready for Pickup';
+  } else if (isUrgent || orderStatus === 'urgent new order') {
+    customStatus = 'Urgent New Order';
+  } else if (orderStatus === 'assigned order') {
+    customStatus = 'Assigned Order';
+  } else if (orderStatus === 'finishing & binding') {
+    customStatus = 'Finishing & Binding';
+  } else if (orderStatus === 'to be checked') {
+    customStatus = 'To be Checked';
+  } else if (orderStatus === 'in progress') {
+    customStatus = 'In Progress';
+  } else if (orderStatus === 'ready for dispatch') {
+    customStatus = 'Ready for Dispatch';
+  } else if (orderStatus === 'need attention') {
+    customStatus = 'Need Attention';
+  } else {
+    customStatus = 'New Order';
   }
 
   return {
@@ -39,7 +76,6 @@ function cleanOrder(order, metafields = []) {
     tags: Array.isArray(order.tags) ? order.tags : [order.tags || ''],
     total_price: order.total_price || '',
 
-    // ASSIGNEE
     assignee: [
       metafieldMap['assignee-1'] || '',
       metafieldMap['assignee-2'] || '',
@@ -51,7 +87,6 @@ function cleanOrder(order, metafields = []) {
     assignee_3: metafieldMap['assignee-3'] || '',
     assignee_4: metafieldMap['assignee-4'] || '',
 
-    // PROGRESS
     progress: [
       metafieldMap['progress-1'] || '',
       metafieldMap['progress-2'] || '',
@@ -63,12 +98,10 @@ function cleanOrder(order, metafields = []) {
     progress_3: metafieldMap['progress-3'] || '',
     progress_4: metafieldMap['progress-4'] || '',
 
-    // STATUS
-    custom_status: '', // nastavuješ cez vlastnú logiku
-    order_status: metafieldMap['order-custom-status'] || 'new order',
-    is_urgent: metafieldMap['urgent'] === 'true' || false,
+    custom_status: customStatus,
+    order_status: orderStatusRaw || 'New Order',
+    is_urgent: isUrgent,
 
-    // Časy
     expected_time: metafieldMap['expected_time'] || '',
     expected_time_1: metafieldMap['expected_time-1'] || '',
 

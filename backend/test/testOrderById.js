@@ -5,7 +5,7 @@ const path = require('path');
 
 dotenv.config({ path: path.resolve(__dirname, '../../backend/.env') });
 
-const orderId = '10133502427460'; // ← zmeň na ID ktoré chceš
+const orderId = '10139248591172'; // ← zmeň na ID ktoré chceš
 
 const SHOPIFY_API_URL = process.env.SHOPIFY_API_URL;
 const HEADERS = {
