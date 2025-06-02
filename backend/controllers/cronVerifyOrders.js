@@ -21,9 +21,13 @@ const fetchMetafields = async (orderId) => {
 };
 
 const runCronSync = async () => {
-  console.log('🔧 CRON skript spustený ✅');
-  const now = new Date().toLocaleString('sk-SK', { timeZone: 'Europe/Bratislava' });
-  console.log(`\n🕒 CRON spustený: ${now}`);
+  console.log('🔧 CRON štartuje...');
+  const now = new Date().toISOString();
+
+  const maxExistingOrder = await Order.findOne().sort({ id: -1 });
+  const maxKnownId = maxExistingOrder?.id || 0;
+
+  console.log(`🧠 Najvyššie ID v databáze: ${maxKnownId}`);
 
   let nextUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any&order=created_at desc`;
   const added = [], updated = [], unchanged = [];
@@ -34,8 +38,8 @@ const runCronSync = async () => {
       const orders = response.data.orders;
 
       for (const order of orders) {
-        const existing = await Order.findOne({ id: order.id });
-        await delay(300);
+        const existing = await Order.findOne({ id: Number(order.id) });
+        await delay(200);
 
         const metafields = await fetchMetafields(order.id);
         const cleaned = cleanOrder(order, metafields);
@@ -49,9 +53,13 @@ const runCronSync = async () => {
         }
 
         if (!existing) {
-          await Order.create(cleaned);
-          added.push(cleaned.order_number || cleaned.id);
-          console.log(`✅ Pridaná objednávka: ${cleaned.order_number}`);
+          if (Number(order.id) > maxKnownId) {
+            await Order.create(cleaned);
+            added.push(cleaned.order_number || cleaned.id);
+            console.log(`✅ NOVÁ objednávka pridaná: ${cleaned.order_number}`);
+          } else {
+            console.log(`⏭️ Staršia objednávka ${order.id} – preskočená.`);
+          }
           continue;
         }
 
@@ -71,27 +79,27 @@ const runCronSync = async () => {
         }
       }
 
-      // ➡️ Zistenie next page (paginácia)
+      // stránkovanie
       const linkHeader = response.headers.link;
       const match = linkHeader?.match(/<([^>]+)>;\s*rel="next"/);
       nextUrl = match ? match[1] : null;
     }
 
-    console.log(`\n📊 Súhrn výsledkov:`);
-    console.log(`➕ Pridané: ${added.length}`);
-    console.log(`🔄 Aktualizované: ${updated.length}`);
-    console.log(`⏭️ Nezmenené: ${unchanged.length}`);
-
+    // log do CronLog kolekcie
     await CronLog.create({
       timestamp: new Date(),
       added,
       updated,
       unchanged,
-      runBy: 'system-cron'
+      runBy: 'render-cron'
     });
-    console.log('📘 CronLog zapísaný.');
+
+    console.log(`\n📊 Súhrn CRON behu:`);
+    console.log(`➕ Pridané nové: ${added.length}`);
+    console.log(`🔄 Aktualizované: ${updated.length}`);
+    console.log(`⏭️ Nezmenené: ${unchanged.length}`);
   } catch (err) {
-    console.error('❌ Chyba pri CRON syncu:', err.message);
+    console.error('❌ Chyba počas CRON behu:', err.message);
   }
 };
 
@@ -103,6 +111,6 @@ if (require.main === module) {
       mongoose.connection.close();
     })
     .catch(err => {
-      console.error('❌ Chyba MongoDB pripojenia:', err.message);
+      console.error('❌ MongoDB chyba:', err.message);
     });
 }
