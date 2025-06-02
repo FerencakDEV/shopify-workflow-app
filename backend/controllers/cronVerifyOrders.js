@@ -40,15 +40,7 @@ const runCronSync = async () => {
         await delay(150);
 
         const metafields = await fetchMetafields(order.id);
-        const cleaned = cleanOrder(order, metafields);
-
-        if (!cleaned.fulfillment_status || cleaned.fulfillment_status === 'null') {
-          const status = cleaned.custom_status?.toLowerCase() || '';
-          if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
-          else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
-          else if (status.includes('on hold')) cleaned.fulfillment_status = 'on hold';
-          else cleaned.fulfillment_status = 'unfulfilled';
-        }
+        const cleaned = cleanOrder(order, metafields); // použije už aktualizovanú logiku
 
         if (!existing) {
           await Order.create(cleaned);
@@ -87,7 +79,7 @@ const runCronSync = async () => {
       runBy: 'render-cron'
     });
 
-    console.log(`\n📊 Súhrn CRON:`)
+    console.log(`\n📊 Súhrn CRON:`);
     console.log(`➕ Pridané: ${added.length}`);
     console.log(`🔄 Aktualizované: ${updated.length}`);
     console.log(`⏭️ Nezmenené: ${unchanged.length}`);

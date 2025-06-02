@@ -4,13 +4,13 @@ function cleanOrder(order, metafields = []) {
     metafieldMap[mf.key] = mf.value;
   }
 
-  // fallback fulfillment_status logika
-  let fulfillmentStatus = order.fulfillment_status || null;
   const orderStatusRaw = metafieldMap['order-custom-status'] || '';
   const orderStatus = orderStatusRaw.toLowerCase();
   const isUrgent = metafieldMap['urgent'] === 'true';
 
-  if (fulfillmentStatus === null || fulfillmentStatus === 'null') {
+  // Fallback fulfillment_status
+  let fulfillmentStatus = order.fulfillment_status || null;
+  if (!fulfillmentStatus || fulfillmentStatus === 'null') {
     if (orderStatus === 'cancelled') {
       fulfillmentStatus = 'fulfilled';
     } else if (orderStatus === 'on hold') {
@@ -22,7 +22,7 @@ function cleanOrder(order, metafields = []) {
     }
   }
 
-  // custom_status podľa logiky dashboard widgetov
+  // custom_status podľa widgetovej logiky
   let customStatus = 'New Order';
 
   if (orderStatus === 'cancelled') {
@@ -51,8 +51,6 @@ function cleanOrder(order, metafields = []) {
     customStatus = 'Ready for Dispatch';
   } else if (orderStatus === 'need attention') {
     customStatus = 'Need Attention';
-  } else {
-    customStatus = 'New Order';
   }
 
   return {
