@@ -43,23 +43,19 @@ const Home = () => {
 
   return (
     <div className="p-4 space-y-6">
-      {/* Nadpis sekcie */}
-      <div className="flex items-center justify-between">
+      {/* Horný nadpisový rad: Orders / Workload */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Left – Orders header */}
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-semibold text-gray-800">Orders</h2>
-          <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-md">By Status</span>
+          <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded-md">By Status</span>
         </div>
-        <div className="flex items-center gap-2 text-gray-400 cursor-pointer hover:text-gray-600">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4h6M4 4v6M20 20h-6M20 20v-6" />
-          </svg>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 20h6M4 20v-6M20 4h-6M20 4v6" />
-          </svg>
-        </div>
+
+        {/* Right – prázdne miesto na zarovnanie, Workload title je už v komponente */}
+        <div></div>
       </div>
 
-      {/* Widgety + Workload */}
+      {/* Obsah – Widgety a Workload */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Widgety */}
         <div className="grid grid-rows-5 grid-cols-2 gap-4">
@@ -75,14 +71,8 @@ const Home = () => {
           <StatusWidget count={counts?.needAttention ?? 0} label="Need Attention" sublabel="Orders with errors" color="#D3BBDD" />
         </div>
 
-        {/* Workload */}
-        <div className="bg-white rounded-xl p-6 shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Workload</h2>
-            <button className="bg-blue-600 text-white text-sm px-3 py-1 rounded">Print & Design</button>
-          </div>
-          <WorkloadChart />
-        </div>
+        {/* Workload Chart (vlastný nadpis má už vo vnútri) */}
+        <WorkloadChart />
       </div>
     </div>
   );
