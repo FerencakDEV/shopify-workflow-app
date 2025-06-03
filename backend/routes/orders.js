@@ -41,8 +41,46 @@ router.get('/export', exportOrders);
 router.get('/stats', getOrderStats);
 router.get('/:id', getOrderById);
 router.get('/workload', getWorkloadByStaff);
+const STATUS_MAP = {
+  'new-orders': 'New Order',
+  'urgent-new-orders': 'Urgent New Order',
+  'assigned-orders': 'Assigned Order',
+  'in-progress': 'In Progress',
+  'finishing-binding': 'Finishing & Binding',
+  'to-be-checked': 'To be Checked',
+  'need-attention': 'Need Attention',
+  'on-hold': 'On Hold',
+  'ready-for-dispatch': 'Ready for Dispatch',
+  'ready-for-pickup': 'Ready for Pickup',
+  'fulfilled': 'Fulfilled',
+  'all-orders': '.*' // special case, if you want
+};
+router.get('/by-status/:key', async (req, res) => {
+  const key = req.params.key;
+  const status = STATUS_MAP[key];
 
+  if (!status) {
+    return res.status(400).send('Invalid status key');
+  }
 
+  try {
+    const query = status === '.*'
+      ? {} // all orders
+      : { custom_status: new RegExp(`^${status}$`, 'i') };
+
+    const orders = await Order.find(query, {
+      order_number: 1,
+      custom_status: 1,
+      fulfillment_status: 1,
+      metafields: 1
+    });
+
+    res.json(orders);
+  } catch (err) {
+    console.error(`❌ Error loading orders by status '${status}':`, err.message);
+    res.status(500).send('Server error');
+  }
+});
 
 
 
