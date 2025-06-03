@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MdCheckCircle, MdError } from 'react-icons/md';
+import { MdCheckCircle, MdSearch } from 'react-icons/md';
 
 const ContentHeader = () => {
   const [dateTime, setDateTime] = useState(new Date());
@@ -36,26 +36,30 @@ const ContentHeader = () => {
 
   return (
     <div className="flex justify-between items-center px-6 py-3 border-b bg-white shadow-sm">
+      {/* Left section: logo, time, status */}
       <div className="flex items-center gap-4">
-        <span className="text-xl font-bold text-green-600">Reads <span className="text-black">WorkFlow</span></span>
+        <span className="text-xl font-bold text-green-600">
+          Reads <span className="text-black">WorkFlow</span>
+        </span>
 
         <div className="flex items-center gap-2 bg-gray-100 text-sm text-gray-800 px-3 py-1 rounded-lg">
           {new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           {` ${formattedTime.split(',')[0]}, ${formattedTime.split(',')[1]}`}
         </div>
 
-        <div className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm ${apiStatus === 'live' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'}`}>
-          {apiStatus === 'live' ? (
-            <>
-              <span className="w-2 h-2 bg-green-500 rounded-full" />
-              Live
-            </>
-          ) : (
-            <>
-              <span className="w-2 h-2 bg-red-500 rounded-full" />
-              Error
-            </>
-          )}
+        <div
+          className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm ${
+            apiStatus === 'live'
+              ? 'bg-gray-100 text-gray-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              apiStatus === 'live' ? 'bg-green-500' : 'bg-red-500'
+            }`}
+          />
+          {apiStatus === 'live' ? 'Live' : 'Error'}
         </div>
 
         <a
@@ -70,14 +74,24 @@ const ContentHeader = () => {
         </a>
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          placeholder="Search order number..."
-          className="px-3 py-1 border border-gray-300 rounded-md text-sm w-52"
-        />
-        <button className="text-base">🔍</button>
-        <button className="ml-2 px-3 py-1 border rounded-md bg-gray-100 hover:bg-gray-200 text-sm">👤 Staff ▾</button>
+      {/* Right section: search + staff */}
+      <div className="flex items-center gap-4">
+        {/* Search input with icon */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search order number..."
+            className="pl-3 pr-9 py-2 bg-gray-100 rounded-md text-sm w-56 placeholder-gray-500 focus:outline-none"
+          />
+          <MdSearch className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg" />
+        </div>
+
+        {/* Staff button */}
+        <button className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm text-gray-800">
+          <span className="text-lg">👤</span>
+          <span>Staff</span>
+          <span className="text-xs">▾</span>
+        </button>
       </div>
     </div>
   );
