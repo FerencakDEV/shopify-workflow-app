@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { MdCheckCircle, MdSearch } from 'react-icons/md';
+import { MdCheckCircle, MdError, MdMenu, MdSearch, MdPerson } from 'react-icons/md';
 
 const ContentHeader = () => {
   const [dateTime, setDateTime] = useState(new Date());
   const [apiStatus, setApiStatus] = useState<'live' | 'error'>('live');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setDateTime(new Date()), 1000);
@@ -35,62 +36,61 @@ const ContentHeader = () => {
   });
 
   return (
-    <div className="flex justify-between items-center px-6 py-3 border-b bg-white shadow-sm">
-      {/* Left section: logo, time, status */}
-      <div className="flex items-center gap-4">
-        <span className="text-xl font-bold text-green-600">
-          Reads <span className="text-black">WorkFlow</span>
-        </span>
-
-        <div className="flex items-center gap-2 bg-gray-100 text-sm text-gray-800 px-3 py-1 rounded-lg">
-          {new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          {` ${formattedTime.split(',')[0]}, ${formattedTime.split(',')[1]}`}
+    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 py-3 border-b bg-white shadow-sm gap-3 lg:gap-0">
+      {/* Left Side */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full">
+        <div className="flex justify-between items-center w-full lg:w-auto">
+          <span className="text-xl font-bold text-green-600">Reads <span className="text-black">WorkFlow</span></span>
+          <button className="lg:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)}>
+            <MdMenu />
+          </button>
         </div>
 
-        <div
-          className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm ${
-            apiStatus === 'live'
-              ? 'bg-gray-100 text-gray-800'
-              : 'bg-red-100 text-red-800'
-          }`}
-        >
-          <span
-            className={`w-2 h-2 rounded-full ${
-              apiStatus === 'live' ? 'bg-green-500' : 'bg-red-500'
-            }`}
-          />
-          {apiStatus === 'live' ? 'Live' : 'Error'}
-        </div>
+        {(menuOpen || window.innerWidth >= 1024) && (
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full lg:w-auto">
+            <div className="flex items-center gap-2 bg-gray-100 text-sm text-gray-800 px-3 py-1 rounded-lg mt-1 lg:mt-0">
+              {new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {` ${formattedTime.split(',')[0]}, ${formattedTime.split(',')[1]}`}
+            </div>
 
-        <a
-          href="https://www.shopifystatus.com/"
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800"
-        >
-          Shopify status:
-          <MdCheckCircle className="text-green-600 text-lg" />
-          <span className="text-green-600 font-medium">Online</span>
-        </a>
+            <div
+              className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm mt-1 lg:mt-0 ${
+                apiStatus === 'live' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${apiStatus === 'live' ? 'bg-green-500' : 'bg-red-500'}`} />
+              {apiStatus === 'live' ? 'Live' : 'Error'}
+            </div>
+
+            <a
+              href="https://www.shopifystatus.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800 mt-1 lg:mt-0"
+            >
+              Shopify status:
+              <MdCheckCircle className="text-green-600 text-lg" />
+              <span className="text-green-600 font-medium">Online</span>
+            </a>
+          </div>
+        )}
       </div>
 
-      {/* Right section: search + staff */}
-      <div className="flex items-center gap-4">
-        {/* Search input with icon */}
-        <div className="relative">
+      {/* Right Side */}
+      <div className="flex items-center gap-2 w-full lg:w-auto">
+        <div className="flex items-center border border-gray-300 rounded-md overflow-hidden w-full lg:w-52">
           <input
             type="text"
             placeholder="Search order number..."
-            className="pl-3 pr-9 py-2 bg-gray-100 rounded-md text-sm w-56 placeholder-gray-500 focus:outline-none"
+            className="px-3 py-1 text-sm w-full outline-none"
           />
-          <MdSearch className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg" />
+          <button className="px-2 text-lg text-gray-600">
+            <MdSearch />
+          </button>
         </div>
-
-        {/* Staff button */}
-        <button className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm text-gray-800">
-          <span className="text-lg">👤</span>
-          <span>Staff</span>
-          <span className="text-xs">▾</span>
+        <button className="flex items-center gap-1 px-3 py-1 border rounded-md bg-gray-100 hover:bg-gray-200 text-sm">
+          <MdPerson />
+          Staff ▾
         </button>
       </div>
     </div>
