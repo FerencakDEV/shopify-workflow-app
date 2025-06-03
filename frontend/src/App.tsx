@@ -12,6 +12,7 @@ function App() {
         <Route path="/" element={<Home />} />
         {/* <Route path="/orders" element={<OrdersPage />} /> */}
         {/* <Route path="/staff" element={<StaffPage />} /> */}
+        <Route path="/status/:key" element={<WidgetPage />} />
       </Routes>
     </div>
   );
