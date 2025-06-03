@@ -51,19 +51,6 @@ const fetchWithRetry = async (id, maxAttempts = 3, delayMs = 2000) => {
   return { fullOrder: null, metafields: [] };
 };
 
-const resolveFallbackFulfillment = (order, cleanedOrder) => {
-  if (!cleanedOrder.fulfillment_status || cleanedOrder.fulfillment_status === 'null') {
-    const status = cleanedOrder.order_status?.toLowerCase();
-    if (status === 'cancelled') {
-      cleanedOrder.fulfillment_status = 'fulfilled';
-    } else if (['onhold', 'ready for pickup'].includes(status)) {
-      cleanedOrder.fulfillment_status = status;
-    } else {
-      cleanedOrder.fulfillment_status = 'unfulfilled';
-    }
-  }
-};
-
 // CREATE webhook
 const orderCreated = async (req, res) => {
   const webhookOrder = req.body;
@@ -80,8 +67,6 @@ const orderCreated = async (req, res) => {
     if (!fullOrder) return res.status(500).send('Failed to fetch full order');
 
     const cleanedOrder = await cleanOrder(fullOrder, metafields);
-    resolveFallbackFulfillment(fullOrder, cleanedOrder);
-
     await Order.create(cleanedOrder);
     console.log(`✅ CREATE: Order ${cleanedOrder.name || cleanedOrder.id} added.`);
     res.status(200).send('CREATE OK');
@@ -97,29 +82,10 @@ const orderUpdated = async (req, res) => {
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
 
   try {
-    const existing = await Order.findOne({ id: webhookOrder.id });
-
-    if (!existing) {
-      console.log(`➕ UPDATE: Order ${webhookOrder.name || webhookOrder.id} not found – creating new.`);
-    } else {
-      const isDifferent = [
-        'order_number',
-        'fulfillment_status',
-        'assignee_1', 'assignee_2', 'assignee_3', 'assignee_4',
-        'progress_1', 'progress_2', 'progress_3', 'progress_4',
-      ].some(field => existing[field] !== webhookOrder[field]);
-
-      if (!isDifferent) {
-        console.log(`⏭️ UPDATE: Order ${webhookOrder.name || webhookOrder.id} has no relevant changes – skipping.`);
-        return res.status(200).send('No changes');
-      }
-    }
-
     const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id);
     if (!fullOrder) return res.status(500).send('Failed to fetch full order');
 
     const cleanedOrder = await cleanOrder(fullOrder, metafields);
-    resolveFallbackFulfillment(fullOrder, cleanedOrder);
 
     await Order.updateOne(
       { id: cleanedOrder.id },

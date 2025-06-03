@@ -1,8 +1,6 @@
-// src/pages/Home.tsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import StatusWidget from '../components/StatusWidget';
 import WorkloadChart from '../components/WorkloadChart';
-import '../styles/Home.css';
 
 interface Counts {
   newOrders: number;
@@ -27,7 +25,7 @@ const Home = () => {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/dashboard/status-counts'); // alebo tvoj správny endpoint
+        const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/dashboard/status-counts');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data: Counts = await res.json();
         setCounts(data);
@@ -40,29 +38,27 @@ const Home = () => {
     fetchCounts();
   }, []);
 
-  if (loading) return <div style={{ padding: 20 }}>Loading dashboard...</div>;
-  if (error) return <div style={{ padding: 20, color: 'red' }}>Error: {error}</div>;
+  if (loading) return <div className="p-6 text-sm">Loading dashboard...</div>;
+  if (error) return <div className="p-6 text-red-600 text-sm">Error: {error}</div>;
 
   return (
-    <div className="dashboard-container">
-      <div className="widgets-section">
-        <StatusWidget count={counts?.newOrders ?? 0} label="New Orders" sublabel="To be assigned" color="blue" />
-        <StatusWidget count={counts?.urgentNewOrders ?? 0} label="Urgent New Orders" sublabel="To be assigned" color="red-dark" />
-        <StatusWidget count={counts?.assignedOrders ?? 0} label="Assigned Orders" sublabel="Not started" color="blue-light" />
-        <StatusWidget count={counts?.inProgress ?? 0} label="In Progress" sublabel="Print & Design" color="orange" />
-        <StatusWidget count={counts?.printedDone ?? 0} label="Printed-Done" sublabel="Processed" color="green-light" />
-        <StatusWidget count={counts?.finishingBinding ?? 0} label="Finishing & Binding" sublabel="" color="brown" />
-        <StatusWidget count={counts?.toBeChecked ?? 0} label="To be Checked" sublabel="Before delivery" color="purple" />
-        <StatusWidget count={counts?.onHold ?? 0} label="On Hold" sublabel="Progress Paused" color="pink" />
-        <StatusWidget count={counts?.readyForDispatch ?? 0} label="Ready for Dispatch" sublabel="Post, Courier, Taxi" color="dark" />
-        <StatusWidget count={counts?.needAttention ?? 0} label="Need Attention" sublabel="Orders with errors" color="red" />
-        <StatusWidget count={counts?.readyForPickup ?? 0} label="Ready for Pickup" sublabel="Collections" color="black" />
-        <StatusWidget count={counts?.allOrders ?? 0} label="All Orders" sublabel="" color="green" />
+    <div className="p-6 space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <StatusWidget count={counts?.newOrders ?? 0} label="New Orders" sublabel="To be assigned" color="#BCECE0" />
+        <StatusWidget count={counts?.urgentNewOrders ?? 0} label="Urgent New Orders" sublabel="To be assigned" color="#FFC2C7" />
+        <StatusWidget count={counts?.assignedOrders ?? 0} label="Assigned Orders" sublabel="Not started" color="#D4D4D4" />
+        <StatusWidget count={counts?.inProgress ?? 0} label="In Progress" sublabel="Print & Design" color="#FFBD62" />
+        <StatusWidget count={counts?.printedDone ?? 0} label="Printed-Done" sublabel="Processed" color="#C1F5C0" />
+        <StatusWidget count={counts?.finishingBinding ?? 0} label="Finishing & Binding" sublabel="Completing Orders" color="#FFF4BD" />
+        <StatusWidget count={counts?.toBeChecked ?? 0} label="To be Checked" sublabel="Before delivery" color="#D4F1F4" />
+        <StatusWidget count={counts?.onHold ?? 0} label="On Hold" sublabel="Progress Paused" color="#F7D6D0" />
+        <StatusWidget count={counts?.readyForDispatch ?? 0} label="Ready for Dispatch" sublabel="Post, Courier, Taxi" color="#E5DDC8" />
+        <StatusWidget count={counts?.needAttention ?? 0} label="Need Attention" sublabel="Orders with errors" color="#D3BBDD" />
+        <StatusWidget count={counts?.readyForPickup ?? 0} label="Ready for Pickup" sublabel="Collections" color="#FBE5C8" />
+        <StatusWidget count={counts?.allOrders ?? 0} label="All Orders" sublabel="" color="#7FD28D" />
       </div>
 
-      <div className="chart-section">
-        <WorkloadChart />
-      </div>
+      <WorkloadChart />
     </div>
   );
 };

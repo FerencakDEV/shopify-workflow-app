@@ -1,21 +1,18 @@
 import { Link } from 'react-router-dom';
-import * as MdIcons from 'react-icons/md';
-import '../styles/navbar.css';
+import { MdHome, MdList, MdPerson } from 'react-icons/md';
 
 const NavBar = () => {
   return (
-    <nav className="nav-bar">
-      <Link to="/" className="nav-item">
-        <MdIcons.MdHome className="icon" /> Home
+    <nav className="flex gap-4 px-6 py-2 bg-gray-50 text-sm font-medium border-b">
+      <Link to="/" className="flex items-center gap-2 hover:text-blue-600 transition">
+        <MdHome /> Home
       </Link>
-      <div className="nav-item dropdown">
-        <MdIcons.MdList className="icon" /> Orders by Status <span className="arrow">▾</span>
-        {/* dropdown obsah ak chceš */}
-      </div>
-      <div className="nav-item dropdown">
-       <MdIcons.MdPerson className="icon" /> Staff Workload <span className="arrow">▾</span>
-        {/* dropdown obsah ak chceš */}
-      </div>
+      <Link to="/orders" className="flex items-center gap-2 hover:text-blue-600 transition">
+        <MdList /> Orders by Status ▾
+      </Link>
+      <Link to="/staff" className="flex items-center gap-2 hover:text-blue-600 transition">
+        <MdPerson /> Staff Workload ▾
+      </Link>
     </nav>
   );
 };

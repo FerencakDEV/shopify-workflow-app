@@ -1,19 +1,19 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import Home from './pages/Home';
-import OrdersByStatus from './pages/OrdersByStatus';
-import StaffWorkload from './pages/StaffWorkload';
+import React from "react";
+import Header from "./components/Header";
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+// sem môžeš doplniť aj ďalšie page komponenty
 
 function App() {
   return (
-    <Router>
+    <div className="bg-gray-100 min-h-screen">
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/orders" element={<OrdersByStatus />} />
-        <Route path="/staff" element={<StaffWorkload />} />
+        {/* <Route path="/orders" element={<OrdersPage />} /> */}
+        {/* <Route path="/staff" element={<StaffPage />} /> */}
       </Routes>
-    </Router>
+    </div>
   );
 }
 

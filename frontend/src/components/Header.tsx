@@ -1,5 +1,5 @@
 import ContentHeader from './ContentHeader';
-import NavBar from '../components/Navbar';
+import NavBar from './NavBar';
 
 const Header = () => {
   return (

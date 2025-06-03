@@ -1,5 +1,4 @@
 import React from 'react';
-import '../styles/WorkloadChart.css';
 
 const mockData = [
   { assignee: 'Q1', inProgress: 2, assigned: 3, ordersInProgress: ['#66321', '#66324'], ordersAssigned: ['#66340', '#66343', '#66345'] },
@@ -12,31 +11,41 @@ const mockData = [
 ];
 
 const WorkloadChart = () => (
-  <div className="workload-container">
-    <div className="workload-header">
-      <h2 className="workload-title">
-        Workload <span className="workload-subtitle">Real-Time</span>
+  <div className="p-4 bg-gray-900 text-white rounded-xl shadow-lg">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-xl font-bold">
+        Workload <span className="text-sm text-gray-400">Real-Time</span>
       </h2>
-      <span className="workload-badge">Print & Design</span>
+      <span className="bg-blue-700 text-white text-xs px-2 py-1 rounded">Print & Design</span>
     </div>
 
-    <div className="workload-scroll">
-      <div className="workload-chart">
+    <div className="overflow-x-auto">
+      <div className="flex gap-6">
         {mockData.map((item, i) => (
-          <div key={i} className="chart-column">
-            <div className="chart-bars">
-              <div className="bar-inprogress" style={{ height: `${item.inProgress * 20}px` }}></div>
-              <div className="bar-assigned" style={{ height: `${item.assigned * 20}px` }}></div>
+          <div key={i} className="flex flex-col items-center bg-gray-800 p-2 rounded-lg w-36 min-w-36">
+            <div className="flex flex-col justify-end h-32 w-full mb-2">
+              <div
+                className="bg-yellow-500 rounded-t w-full"
+                style={{ height: `${item.inProgress * 10}px` }}
+              ></div>
+              <div
+                className="bg-blue-500 rounded-b w-full mt-1"
+                style={{ height: `${item.assigned * 10}px` }}
+              ></div>
             </div>
-            <div className="chart-assignee">{item.assignee}</div>
-            <div className="chart-counts">
-              <span className="count-inprogress">{item.inProgress}</span>
-              <span className="count-divider">|</span>
-              <span className="count-assigned">{item.assigned}</span>
+            <div className="text-sm font-medium text-center">{item.assignee}</div>
+            <div className="text-xs text-gray-400 mb-2">
+              <span className="text-yellow-400">{item.inProgress}</span>
+              <span className="mx-1">|</span>
+              <span className="text-blue-400">{item.assigned}</span>
             </div>
-            <div className="chart-orders">
-              {item.ordersInProgress.map((order, j) => <div key={j} className="order-inprogress">{order}</div>)}
-              {item.ordersAssigned.map((order, j) => <div key={j} className="order-assigned">{order}</div>)}
+            <div className="text-xs space-y-1 text-center">
+              {item.ordersInProgress.map((order, j) => (
+                <div key={j} className="text-yellow-300">{order}</div>
+              ))}
+              {item.ordersAssigned.map((order, j) => (
+                <div key={j} className="text-blue-300">{order}</div>
+              ))}
             </div>
           </div>
         ))}
