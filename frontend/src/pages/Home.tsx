@@ -45,7 +45,7 @@ const Home = () => {
     <div className="p-6 space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Orders */}
-        <div className="lg:col-span-4 flex flex-col h-full">
+        <div className="lg:col-span-5 flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-semibold text-gray-900">Orders</h2>
@@ -75,7 +75,7 @@ const Home = () => {
         </div>
 
         {/* Workload */}
-        <div className="lg:col-span-8 flex flex-col h-full">
+        <div className="lg:col-span-7 flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-semibold text-gray-900">Workload</h2>
