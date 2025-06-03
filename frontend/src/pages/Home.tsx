@@ -44,23 +44,21 @@ const Home = () => {
   return (
     <div className="p-6 space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* ORDERS */}
+        {/* Orders */}
         <div className="lg:col-span-4 flex flex-col h-full">
-          {/* Header */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-semibold text-gray-900">Orders</h2>
               <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">By Status</span>
             </div>
             <div className="text-gray-400 hover:text-gray-600 cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4h5M4 4v5M20 20h-5M20 20v-5M4 20h5M4 20v-5M20 4h-5M20 4v5" />
               </svg>
             </div>
           </div>
 
-          {/* Widgety */}
-          <div className="bg-white rounded-xl shadow p-4 h-full border border-gray-200">
+          <div className="bg-white rounded-xl shadow p-4 h-full">
             <div className="grid grid-rows-5 grid-cols-2 gap-4">
               <StatusWidget count={counts?.newOrders ?? 0} label="New Orders" sublabel="To be assigned" color="#BCECE0" />
               <StatusWidget count={counts?.urgentNewOrders ?? 0} label="Urgent New Orders" sublabel="To be assigned" color="#FFC2C7" />
@@ -76,7 +74,7 @@ const Home = () => {
           </div>
         </div>
 
-        {/* WORKLOAD */}
+        {/* Workload */}
         <div className="lg:col-span-8 flex flex-col h-full">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -84,13 +82,13 @@ const Home = () => {
               <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">Print & Design</span>
             </div>
             <div className="text-gray-400 hover:text-gray-600 cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4h5M4 4v5M20 20h-5M20 20v-5M4 20h5M4 20v-5M20 4h-5M20 4v5" />
               </svg>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-4 h-full border border-gray-200">
+          <div className="bg-white rounded-xl shadow p-4 h-full">
             <WorkloadChart />
           </div>
         </div>
