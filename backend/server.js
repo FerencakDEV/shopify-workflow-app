@@ -3,12 +3,15 @@ const cors = require('cors');
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Order = require('./models/Order');
+
 const orderRoutes = require('./routes/orders');
-const dashboardRoutes = require('./routes/dashboard');
 const ordersByStatusRoutes = require('./routes/ordersByStatus');
-const {cleanOrder} = require('./controllers/cleanOrder')
-const app = express();
+const dashboardRoutes = require('./routes/dashboard');
 const workloadChartRoutes = require('./routes/workloadChart');
+const { cleanOrder } = require('./controllers/cleanOrder');
+
+const app = express();
+
 // ✅ CORS (musí byť pred všetkými routes)
 app.use(cors({
   origin: ['http://localhost:3000', 'https://shopify-workflow-app-frontend.onrender.com'],
@@ -37,9 +40,10 @@ app.get('/', (req, res) => {
 
 // ✅ API routes
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/orders', orderRoutes);
-app.use('/orders', ordersByStatusRoutes); // môže byť tu, lebo ide tiež na /orders
 app.use('/api/dashboard', workloadChartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/orders', ordersByStatusRoutes);
+
 // ✅ Webhooks
 
 // ✅ Webhook – CREATE
