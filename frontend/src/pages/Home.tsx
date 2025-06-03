@@ -42,8 +42,9 @@ const Home = () => {
   if (error) return <div className="p-6 text-red-600 text-sm">Error: {error}</div>;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+      {/* Left side – widgets */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <StatusWidget count={counts?.newOrders ?? 0} label="New Orders" sublabel="To be assigned" color="#BCECE0" />
         <StatusWidget count={counts?.urgentNewOrders ?? 0} label="Urgent New Orders" sublabel="To be assigned" color="#FFC2C7" />
         <StatusWidget count={counts?.assignedOrders ?? 0} label="Assigned Orders" sublabel="Not started" color="#D4D4D4" />
@@ -54,11 +55,16 @@ const Home = () => {
         <StatusWidget count={counts?.onHold ?? 0} label="On Hold" sublabel="Progress Paused" color="#F7D6D0" />
         <StatusWidget count={counts?.readyForDispatch ?? 0} label="Ready for Dispatch" sublabel="Post, Courier, Taxi" color="#E5DDC8" />
         <StatusWidget count={counts?.needAttention ?? 0} label="Need Attention" sublabel="Orders with errors" color="#D3BBDD" />
-        <StatusWidget count={counts?.readyForPickup ?? 0} label="Ready for Pickup" sublabel="Collections" color="#FBE5C8" />
-        <StatusWidget count={counts?.allOrders ?? 0} label="All Orders" sublabel="" color="#7FD28D" />
       </div>
 
-      <WorkloadChart />
+      {/* Right side – workload */}
+      <div className="bg-white rounded-xl p-6 shadow">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Workload</h2>
+          <button className="bg-blue-600 text-white text-sm px-3 py-1 rounded">Print & Design</button>
+        </div>
+        <WorkloadChart />
+      </div>
     </div>
   );
 };
