@@ -2,6 +2,7 @@ import React from "react";
 import Header from "./components/Header";
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
+import WidgetPage from './pages/WidgetPage';
 // sem môžeš doplniť aj ďalšie page komponenty
 
 function App() {
