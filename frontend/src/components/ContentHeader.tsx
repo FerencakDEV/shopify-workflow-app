@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MdCheckCircle, MdError, MdMenu, MdSearch, MdPerson } from 'react-icons/md';
+import { MdCheckCircle, MdSearch, MdMenu, MdPerson } from 'react-icons/md';
 
 const ContentHeader = () => {
   const [dateTime, setDateTime] = useState(new Date());
@@ -37,10 +37,11 @@ const ContentHeader = () => {
 
   return (
     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 py-3 border-b bg-white shadow-sm gap-3 lg:gap-0">
-      {/* Left Side */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full">
         <div className="flex justify-between items-center w-full lg:w-auto">
-          <span className="text-xl font-bold text-green-600">Reads <span className="text-black">WorkFlow</span></span>
+          <span className="text-xl font-bold text-green-600 whitespace-nowrap">
+            Reads <span className="text-black">WorkFlow</span>
+          </span>
           <button className="lg:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)}>
             <MdMenu />
           </button>
@@ -58,7 +59,11 @@ const ContentHeader = () => {
                 apiStatus === 'live' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
               }`}
             >
-              <span className={`w-2 h-2 rounded-full ${apiStatus === 'live' ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  apiStatus === 'live' ? 'bg-green-500' : 'bg-red-500'
+                }`}
+              />
               {apiStatus === 'live' ? 'Live' : 'Error'}
             </div>
 
@@ -76,7 +81,6 @@ const ContentHeader = () => {
         )}
       </div>
 
-      {/* Right Side */}
       <div className="flex items-center gap-2 w-full lg:w-auto">
         <div className="flex items-center border border-gray-300 rounded-md overflow-hidden w-full lg:w-52">
           <input
