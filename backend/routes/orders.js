@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const Order = require('../models/Order');
+
 // ✅ Funkčný import zo správneho súboru
 const { importOrdersCleaned } = require('../controllers/fullImportDescending');
 
@@ -35,12 +37,14 @@ router.get('/full-import', async (req, res) => {
     res.status(500).json({ error: 'Nepodarilo sa spustiť import', detail: err.response?.data || err.message });
   }
 });
+
 router.get('/', getOrders);
 router.get('/with-status', getOrdersWithStatus);
 router.get('/export', exportOrders);
 router.get('/stats', getOrderStats);
-router.get('/:id', getOrderById);
 router.get('/workload', getWorkloadByStaff);
+
+// 🔑 Mapovanie statusov pre frontend
 const STATUS_MAP = {
   'new-orders': 'New Order',
   'urgent-new-orders': 'Urgent New Order',
@@ -53,8 +57,10 @@ const STATUS_MAP = {
   'ready-for-dispatch': 'Ready for Dispatch',
   'ready-for-pickup': 'Ready for Pickup',
   'fulfilled': 'Fulfilled',
-  'all-orders': '.*' // special case, if you want
+  'all-orders': '.*' // špeciálny prípad
 };
+
+// ✅ PRESUNUTÉ NAD /:id
 router.get('/by-status/:key', async (req, res) => {
   const key = req.params.key;
   const status = STATUS_MAP[key];
@@ -82,7 +88,7 @@ router.get('/by-status/:key', async (req, res) => {
   }
 });
 
-
-
+// ⛔ Daj AŽ SEM, aby neblokoval ostatné
+router.get('/:id', getOrderById);
 
 module.exports = router;
