@@ -1,3 +1,5 @@
+import { Eye } from 'lucide-react';
+
 interface StatusWidgetProps {
   count: number;
   label: string;
@@ -7,15 +9,19 @@ interface StatusWidgetProps {
 
 const StatusWidget = ({ count, label, sublabel, color }: StatusWidgetProps) => {
   return (
-    <div className="w-full flex items-center justify-between">
-  <div className={`w-12 h-12 flex items-center justify-center rounded-full font-bold text-white`} style={{ backgroundColor: color }}>
-    {count}
-  </div>
-  <div className="flex flex-col items-end text-right">
-    <span className="text-base font-medium">{label}</span>
-    <span className="text-sm text-gray-500">{sublabel}</span>
-  </div>
-</div>
+    <div className="relative bg-white rounded-xl p-4 shadow hover:shadow-md transition flex flex-col justify-between min-h-[100px]">
+      {/* Ikonka oka v pravom hornom rohu */}
+      <div className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 cursor-pointer">
+        <Eye size={16} />
+      </div>
+
+      {/* Počet */}
+      <div className="text-3xl font-bold" style={{ color }}>{count}</div>
+
+      {/* Texty */}
+      <div className="text-base font-medium text-gray-800">{label}</div>
+      <div className="text-sm text-gray-500">{sublabel}</div>
+    </div>
   );
 };
 
