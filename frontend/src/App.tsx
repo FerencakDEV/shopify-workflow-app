@@ -3,7 +3,6 @@ import Header from "./components/Header";
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import WidgetPage from './pages/WidgetPage';
-// sem môžeš doplniť aj ďalšie page komponenty
 
 function App() {
   return (
@@ -11,9 +10,7 @@ function App() {
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
-        {/* <Route path="/orders" element={<OrdersPage />} /> */}
-        {/* <Route path="/staff" element={<StaffPage />} /> */}
-        <Route path="/status/:key" element={<WidgetPage />} />
+        <Route path="/orders/:key" element={<WidgetPage />} />
       </Routes>
     </div>
   );
