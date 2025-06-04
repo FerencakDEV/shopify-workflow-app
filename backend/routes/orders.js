@@ -70,9 +70,30 @@ router.get('/by-status/:key', async (req, res) => {
   }
 
   try {
-    const query = status === '.*'
-      ? {} // all orders
-      : { custom_status: new RegExp(`^${status}$`, 'i') };
+    let query = {};
+
+if (status === 'New Order') {
+  query = {
+    custom_status: 'New Order',
+    $or: [
+      { metafields: { $exists: false } },
+      { metafields: {} },
+      {
+        $and: [
+          { 'metafields.assignee': { $exists: false } },
+          { 'metafields.progress': { $exists: false } },
+          { 'metafields["order-custom-status"]': { $in: [null, '', 'New Order'] } },
+          { 'metafields["expected-time"]': { $exists: false } }
+        ]
+      }
+    ]
+  };
+} else if (status === '.*') {
+  query = {}; // All orders
+} else {
+  query = { custom_status: new RegExp(`^${status}$`, 'i') };
+}
+
 
     const orders = await Order.find(query, {
       order_number: 1,
