@@ -1,58 +1,42 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-
-const statusMap: Record<string, string> = {
-  'new-orders': 'newOrders',
-  'urgent-new-orders': 'urgentNewOrders',
-  'assigned-orders': 'assignedOrders',
-  'in-progress': 'inProgress',
-  'printed-done': 'printedDone',
-  'finishing-binding': 'finishingBinding',
-  'to-be-checked': 'toBeChecked',
-  'on-hold': 'onHold',
-  'ready-for-dispatch': 'readyForDispatch',
-  'need-attention': 'needAttention',
-};
+import { fetchOrdersByStatus } from '../api/fetchOrdersByStatus'; // ✅ prispôsob cestu
 
 const WidgetPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const backendStatus = slug ? statusMap[slug] : undefined;
 
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!backendStatus) return;
+    if (!slug) return;
 
-    const fetchOrders = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(
-          `https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${encodeURIComponent(backendStatus)}`
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setOrders(data.orders || []);
+        const data = await fetchOrdersByStatus(slug); // ✅ použijeme tvoju funkciu
+        setOrders(data || []);
+        setError(null);
       } catch (err) {
-        setError('Failed to load orders.');
+        setError('⚠️ Failed to load orders.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOrders();
-  }, [backendStatus]);
+    fetchData();
+  }, [slug]);
 
-  if (!backendStatus) {
-    return <div className="p-6 text-red-600">❌ Unknown status slug: {slug}</div>;
+  if (!slug) {
+    return <div className="p-6 text-red-600">❌ Unknown status slug</div>;
   }
 
   if (loading) return <div className="p-6">⏳ Loading orders...</div>;
-  if (error) return <div className="p-6 text-red-600">⚠️ {error}</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">📦 Orders: {backendStatus}</h2>
+      <h2 className="text-xl font-semibold mb-4">📦 Orders: {slug}</h2>
       {orders.length === 0 ? (
         <p>No orders found for this status.</p>
       ) : (
@@ -72,8 +56,8 @@ const WidgetPage = () => {
                 <tr key={order._id} className="border-t">
                   <td className="px-3 py-2">{order.order_number}</td>
                   <td className="px-3 py-2">{order.custom_status || '—'}</td>
-                  <td className="px-3 py-2">{order.progress || '—'}</td>
-                  <td className="px-3 py-2">{(order.assignee || []).join(', ') || '—'}</td>
+                  <td className="px-3 py-2">{order.progress_1 || order.progress?.[0] || '—'}</td>
+                  <td className="px-3 py-2">{order.assignee_1 || order.assignee?.[0] || '—'}</td>
                   <td className="px-3 py-2">{order.fulfillment_status || '—'}</td>
                 </tr>
               ))}
