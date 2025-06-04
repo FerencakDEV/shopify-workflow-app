@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Order = require('../../models/Order'); // uprav ak máš inú cestu
+const Order = require('../models/Order'); // uprav ak máš inú cestu
 
 // Pomocné funkcie
 const getProgressArray = (order) => {
