@@ -13,6 +13,7 @@ const {
 const { exportOrders } = require('../controllers/exportController');
 const { importOrdersCleaned } = require('../controllers/fullImportDescending');
 
+// 🔄 Reimport z API
 router.get('/full-import', async (req, res) => {
   try {
     await importOrdersCleaned();
@@ -23,15 +24,16 @@ router.get('/full-import', async (req, res) => {
   }
 });
 
+// Základné endpointy
 router.get('/', getOrders);
 router.get('/with-status', getOrdersWithStatus);
 router.get('/export', exportOrders);
 router.get('/stats', getOrderStats);
 router.get('/workload', getWorkloadByStaff);
 
+// 🧠 Logika filtrov podľa statusu
 router.get('/by-status', async (req, res) => {
   const status = req.query.status;
-
   if (!status) return res.status(400).json({ error: 'Missing status param' });
 
   const q = (cond) => Order.find(cond, {
@@ -41,11 +43,11 @@ router.get('/by-status', async (req, res) => {
     assignee: 1,
     progress: 1,
     metafields: 1
-  });
+  }).sort({ created_at: -1 }).limit(300);
+
+  let query = {};
 
   try {
-    let query = {};
-
     switch (status) {
       case 'newOrders':
         query = {
@@ -53,12 +55,8 @@ router.get('/by-status', async (req, res) => {
           fulfillment_status: { $ne: 'fulfilled' },
           $or: [
             { assignee: { $size: 0 } },
-            {
-              $and: [
-                { 'assignee.0': { $exists: false } },
-                { 'metafields["assignee"]': { $in: [null, ''] } }
-              ]
-            }
+            { assignee: { $exists: false } },
+            { assignee: null }
           ]
         };
         break;
@@ -70,12 +68,8 @@ router.get('/by-status', async (req, res) => {
           is_urgent: true,
           $or: [
             { assignee: { $size: 0 } },
-            {
-              $and: [
-                { 'assignee.0': { $exists: false } },
-                { 'metafields["assignee"]': { $in: [null, ''] } }
-              ]
-            }
+            { assignee: { $exists: false } },
+            { assignee: null }
           ]
         };
         break;
@@ -84,11 +78,8 @@ router.get('/by-status', async (req, res) => {
         query = {
           custom_status: { $in: ['New Order', 'Urgent New Order'] },
           fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
-          'progress': 'Assigned',
-          $or: [
-            { assignee: { $ne: [] } },
-            { 'assignee.0': { $exists: true } }
-          ]
+          progress: 'Assigned',
+          assignee: { $exists: true, $not: { $size: 0 } }
         };
         break;
 
@@ -96,49 +87,50 @@ router.get('/by-status', async (req, res) => {
         query = {
           custom_status: { $in: ['New Order', 'Urgent New Order', 'Hold Released'] },
           fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
-          'progress': 'In Progress'
+          progress: 'In Progress'
         };
         break;
 
       case 'finishingBinding':
         query = {
           custom_status: { $in: ['New Order', 'Urgent New Order', 'Hold Released'] },
-          'progress': 'Finishing & Binding'
+          progress: 'Finishing & Binding',
+          fulfillment_status: { $ne: 'fulfilled' }
         };
         break;
 
       case 'toBeChecked':
         query = {
-          fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
-          'progress': 'To be Checked'
+          progress: 'To be Checked',
+          fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] }
         };
         break;
 
       case 'readyForDispatch':
         query = {
-          fulfillment_status: 'unfulfilled',
-          'progress': 'Ready for Dispatch'
+          progress: 'Ready for Dispatch',
+          fulfillment_status: 'unfulfilled'
         };
         break;
 
       case 'readyForPickup':
         query = {
-          fulfillment_status: { $ne: 'fulfilled' },
-          'progress': 'Ready for Pickup'
+          progress: 'Ready for Pickup',
+          fulfillment_status: { $ne: 'fulfilled' }
         };
         break;
 
       case 'onHold':
         query = {
-          fulfillment_status: { $ne: 'fulfilled' },
-          custom_status: 'On Hold'
+          custom_status: 'On Hold',
+          fulfillment_status: { $ne: 'fulfilled' }
         };
         break;
 
       case 'needAttention':
         query = {
-          fulfillment_status: { $ne: 'fulfilled' },
-          custom_status: 'Need Attention'
+          custom_status: 'Need Attention',
+          fulfillment_status: { $ne: 'fulfilled' }
         };
         break;
 
@@ -149,7 +141,7 @@ router.get('/by-status', async (req, res) => {
         break;
 
       case 'allOrders':
-        query = {}; // No filter
+        query = {}; // bez filtra
         break;
 
       default:
@@ -165,6 +157,7 @@ router.get('/by-status', async (req, res) => {
   }
 });
 
+// Detail objednávky
 router.get('/:id', getOrderById);
 
 module.exports = router;
