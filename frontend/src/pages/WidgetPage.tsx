@@ -9,7 +9,7 @@ interface Order {
 }
 
 const WidgetPage = () => {
-  const { key } = useParams();
+  const { slug } = useParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,9 +19,9 @@ const WidgetPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const status = key || "";
+        const status = slug || "";
         const res = await fetch(
-          `https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${encodeURIComponent(status)}`
+          `https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${encodeURIComponent(slug || "")}`
         );
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
 
@@ -42,12 +42,12 @@ const WidgetPage = () => {
     };
 
     fetchOrders();
-  }, [key]);
+  }, [slug]);
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">
-        Orders: {key?.replace(/-/g, " ")}
+        Orders: {slug?.replace(/-/g, " ")}
       </h1>
 
       {loading ? (
