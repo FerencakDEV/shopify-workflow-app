@@ -2,23 +2,20 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
-const get = (mf, key) => {
-  if (!mf) return '';
-  if (mf.custom && key in mf.custom) return mf.custom[key];
-  if (key in mf) return mf[key];
-  return '';
+// Helper funkcie
+const get = (mf, key) => mf?.custom?.[key] || '';
+
+const countAssignees = (order) => {
+  return [order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4]
+    .filter(a => a && a.trim() !== '').length;
 };
 
-const countAssignees = (mf) => {
-  return ['assignee', 'assignee-2', 'assignee-3', 'assignee-4']
-    .map(key => get(mf, key)).filter(Boolean).length;
+const hasProgress = (order, name) => {
+  return [order.progress_1, order.progress_2, order.progress_3, order.progress_4]
+    .some(p => p === name);
 };
 
-const hasProgress = (mf, name) => {
-  return ['progress', 'progress-2', 'progress-3', 'progress-4']
-    .some(key => get(mf, key) === name);
-};
-
+// Hlavný endpoint
 router.get('/by-status', async (req, res) => {
   const statusFilter = req.query.status;
   if (!statusFilter) return res.status(400).json({ error: 'Missing status param' });
@@ -28,12 +25,11 @@ router.get('/by-status', async (req, res) => {
 
     const filtered = allOrders.filter(order => {
       const status = (order.fulfillment_status || '').toLowerCase();
-      const mf = order.metafields;
+      const mf = order.metafields || {};
       const customStatus = get(mf, 'order-custom-status') || order.custom_status;
       const urgency = get(mf, 'turnaround-urgency')?.toUpperCase();
-      const assignees = countAssignees(mf);
+      const assignees = countAssignees(order);
 
-      // Fulfilled or Cancelled are ignored globally
       if (['fulfilled', 'cancelled'].includes(status)) return false;
 
       switch (statusFilter) {
@@ -47,31 +43,31 @@ router.get('/by-status', async (req, res) => {
           return ['unfulfilled', 'partially fulfilled'].includes(status)
             && ['New Order', 'Urgent New Order'].includes(customStatus)
             && assignees > 0
-            && hasProgress(mf, 'Assigned');
+            && hasProgress(order, 'Assigned');
 
         case 'inProgress':
           return ['unfulfilled', 'partially fulfilled'].includes(status)
             && ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus)
-            && hasProgress(mf, 'In Progress');
+            && hasProgress(order, 'In Progress');
 
         case 'printedDone':
           return ['unfulfilled', 'partially fulfilled'].includes(status)
             && ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus)
-            && hasProgress(mf, 'Printed-Done');
+            && hasProgress(order, 'Printed-Done');
 
         case 'finishingBinding':
           return ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus)
-            && hasProgress(mf, 'Finishing & Binding');
+            && hasProgress(order, 'Finishing & Binding');
 
         case 'toBeChecked':
           return ['unfulfilled', 'partially fulfilled'].includes(status)
-            && hasProgress(mf, 'To Be Checked');
+            && hasProgress(order, 'To Be Checked');
 
         case 'readyForDispatch':
-          return status === 'unfulfilled' && hasProgress(mf, 'Ready for Dispatch');
+          return status === 'unfulfilled' && hasProgress(order, 'Ready for Dispatch');
 
         case 'readyForPickup':
-          return status !== 'fulfilled' && hasProgress(mf, 'Ready for Pickup');
+          return status !== 'fulfilled' && hasProgress(order, 'Ready for Pickup');
 
         case 'onHold':
           return status !== 'fulfilled' && customStatus === 'On Hold';
@@ -80,20 +76,13 @@ router.get('/by-status', async (req, res) => {
           return status !== 'fulfilled' && customStatus === 'Need Attention';
 
         default:
-          // 🔍 Generic fallback: match against order_status, custom_status, or any progress fields
-          return (
-            (order.order_status === statusFilter) ||
-            (customStatus === statusFilter) ||
-            ['progress', 'progress-2', 'progress-3', 'progress-4'].some(
-              key => get(mf, key) === statusFilter
-            )
-          );
+          return false;
       }
     });
 
     res.json({ count: filtered.length, orders: filtered });
   } catch (err) {
-    console.error('❌ Error fetching orders by status:', err);
+    console.error('Error fetching orders by status:', err);
     res.status(500).json({ error: 'Failed to fetch filtered orders' });
   }
 });
