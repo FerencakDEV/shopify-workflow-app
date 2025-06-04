@@ -64,29 +64,34 @@ router.get('/status-counts', async (req, res) => {
       const progresses = getProgressArray(order).map(p => p.toLowerCase());
       const assignees = getAssigneeArray(order);
 
-      if (['fulfilled', 'cancelled'].includes(status)) return;
-
-      if (status === 'onhold' || orderStatus === 'On Hold') {
-        counts.onHold += 1;
-        return;
-      }
-
-      if (status === 'ready for pickup' || orderStatus === 'Ready for Pickup') {
-        counts.readyForPickup += 1;
-        return;
-      }
-
       const noProgress = progresses.length === 0;
       const noAssignee = assignees.length === 0;
 
+      const inOnHold = orderStatus === 'On Hold' || status === 'on hold';
+      const inReadyForPickup = orderStatus === 'Ready for Pickup' || status === 'ready for pickup';
+
+      // ✅ New and Urgent New Orders – only if truly empty
       if ((orderStatus === 'Urgent New Order' || isUrgent) && noProgress && noAssignee) {
         counts.urgentNewOrders += 1;
+        return;
       }
 
       if (orderStatus === 'New Order' && !isUrgent && noProgress && noAssignee) {
         counts.newOrders += 1;
+        return;
       }
 
+      // ✅ On Hold
+      if (inOnHold) {
+        counts.onHold += 1;
+      }
+
+      // ✅ Ready for Pickup
+      if (inReadyForPickup) {
+        counts.readyForPickup += 1;
+      }
+
+      // ✅ Progress-based statuses
       const usedProgress = new Set();
       progresses.forEach(p => {
         if (!knownProgresses.includes(p)) return;
@@ -118,11 +123,12 @@ router.get('/status-counts', async (req, res) => {
         }
       });
 
+      // ✅ Need Attention
       const hasUnknownProgress = progresses.some(p => !knownProgresses.includes(p));
       const hasOnlyPartialAssignment = progresses.length !== assignees.length;
 
       if (
-        !['On Hold', 'Ready for Pickup'].includes(orderStatus) &&
+        !inOnHold && !inReadyForPickup &&
         (hasUnknownProgress || hasOnlyPartialAssignment)
       ) {
         counts.needAttention += 1;
