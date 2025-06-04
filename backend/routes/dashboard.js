@@ -34,10 +34,10 @@ router.get('/status-counts', async (req, res) => {
     };
 
     const getProgressArray = (order) => [
-      (order.progress_1 || '').trim(),
-      (order.progress_2 || '').trim(),
-      (order.progress_3 || '').trim(),
-      (order.progress_4 || '').trim()
+      (order.progress_1 || '').trim().toLowerCase(),
+      (order.progress_2 || '').trim().toLowerCase(),
+      (order.progress_3 || '').trim().toLowerCase(),
+      (order.progress_4 || '').trim().toLowerCase()
     ].filter(Boolean);
 
     const getAssigneeArray = (order) => [
@@ -61,37 +61,43 @@ router.get('/status-counts', async (req, res) => {
       const status = (order.fulfillment_status || '').toLowerCase();
       const orderStatus = (order.order_status || '').trim();
       const isUrgent = order.is_urgent === true;
-      const progresses = getProgressArray(order).map(p => p.toLowerCase());
+      const progresses = getProgressArray(order);
       const assignees = getAssigneeArray(order);
 
       const noProgress = progresses.length === 0;
       const noAssignee = assignees.length === 0;
 
-      const inOnHold = orderStatus === 'On Hold' || status === 'on hold';
-      const inReadyForPickup = orderStatus === 'Ready for Pickup' || status === 'ready for pickup';
+      // Vyradíme fulfilled/cancelled
+      if (['fulfilled', 'cancelled'].includes(status)) return;
 
-      // ✅ New and Urgent New Orders – only if truly empty
-      if ((orderStatus === 'Urgent New Order' || isUrgent) && noProgress && noAssignee) {
+      // On Hold má prioritu
+      if (status === 'onhold' || orderStatus === 'On Hold') {
+        counts.onHold += 1;
+        return;
+      }
+
+      // Ready for Pickup má prioritu
+      if (status === 'ready for pickup' || orderStatus === 'Ready for Pickup') {
+        counts.readyForPickup += 1;
+        return;
+      }
+
+      // Urgent New Orders
+      if (isUrgent && noProgress && noAssignee) {
         counts.urgentNewOrders += 1;
         return;
       }
 
-      if (orderStatus === 'New Order' && !isUrgent && noProgress && noAssignee) {
+      // New Orders
+      if (!isUrgent && orderStatus === 'New Order' && noProgress && noAssignee) {
         counts.newOrders += 1;
         return;
       }
 
-      // ✅ On Hold
-      if (inOnHold) {
-        counts.onHold += 1;
-      }
+      // Ostatné stavy akceptujú len unfulfilled / partial
+      if (!['unfulfilled', 'partial'].includes(status)) return;
 
-      // ✅ Ready for Pickup
-      if (inReadyForPickup) {
-        counts.readyForPickup += 1;
-      }
-
-      // ✅ Progress-based statuses
+      // Zaradenie podľa progress
       const usedProgress = new Set();
       progresses.forEach(p => {
         if (!knownProgresses.includes(p)) return;
@@ -123,12 +129,12 @@ router.get('/status-counts', async (req, res) => {
         }
       });
 
-      // ✅ Need Attention
+      // Need Attention = neznámy progress alebo neúplné priradenie
       const hasUnknownProgress = progresses.some(p => !knownProgresses.includes(p));
       const hasOnlyPartialAssignment = progresses.length !== assignees.length;
 
       if (
-        !inOnHold && !inReadyForPickup &&
+        !['On Hold', 'Ready for Pickup'].includes(orderStatus) &&
         (hasUnknownProgress || hasOnlyPartialAssignment)
       ) {
         counts.needAttention += 1;
