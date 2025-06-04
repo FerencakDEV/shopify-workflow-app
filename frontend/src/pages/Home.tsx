@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import StatusWidget from '../components/StatusWidget';
+import { StatusWidget } from '../components/StatusWidget';
 import WorkloadChart from '../components/WorkloadChart';
 
 interface Counts {

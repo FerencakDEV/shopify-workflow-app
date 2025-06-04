@@ -1,4 +1,6 @@
-interface StatusWidgetProps {
+import React from 'react';
+
+export interface StatusWidgetProps {
   count: number;
   label: string;
   sublabel: string;
@@ -6,7 +8,13 @@ interface StatusWidgetProps {
   onClick?: () => void;
 }
 
-const StatusWidget = ({ count, label, sublabel, color, onClick }: StatusWidgetProps) => {
+export const StatusWidget: React.FC<StatusWidgetProps> = ({
+  count,
+  label,
+  sublabel,
+  color,
+  onClick,
+}) => {
   return (
     <div
       onClick={onClick}
@@ -33,5 +41,3 @@ const StatusWidget = ({ count, label, sublabel, color, onClick }: StatusWidgetPr
     </div>
   );
 };
-
-export default StatusWidget;

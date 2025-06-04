@@ -1,92 +1,77 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
-interface Order {
-  order_number: string;
-  custom_status: string;
-  fulfillment_status?: string;
-  metafields: Record<string, string>;
-}
+const statusMap: Record<string, string> = {
+  'new-orders': 'New Order',
+  'urgent-new-orders': 'Urgent New Order',
+  'assigned-orders': 'Assigned Order',
+  'in-progress': 'In Progress',
+  'printed-done': 'Printed-Done',
+  'finishing-binding': 'Finishing & Binding',
+  'to-be-checked': 'To be Checked',
+  'on-hold': 'On Hold',
+  'ready-for-dispatch': 'Ready for Dispatch',
+  'need-attention': 'Need Attention',
+};
 
 const WidgetPage = () => {
   const { slug } = useParams();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const backendKey = statusMap[slug || ''] || '';
+
   useEffect(() => {
+    if (!backendKey) return;
+
     const fetchOrders = async () => {
-      setLoading(true);
-      setError(null);
       try {
-        const status = slug || "";
-        const res = await fetch(
-          `https://shopify-workflow-app-backend.onrender.com/api/orders/by-status/${encodeURIComponent(slug || "")}`
-        );
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
-
+        const res = await fetch(`https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${encodeURIComponent(backendKey)}`);
         const data = await res.json();
-
-if (!Array.isArray(data)) {
-  throw new Error("Expected an array of orders in response");
-}
-
-setOrders(data)
-      } catch (err: any) {
-        console.error("Failed to fetch orders", err);
-        setError(err.message || "Unknown error");
-        setOrders([]);
+        setOrders(data.orders || []);
+      } catch (err) {
+        setError('Failed to load orders.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, [slug]);
+  }, [backendKey]);
+
+  if (!backendKey) return <div className="p-6">Unknown status slug: {slug}</div>;
+  if (loading) return <div className="p-6">Loading orders...</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">
-        Orders: {slug?.replace(/-/g, " ")}
-      </h1>
-
-      {loading ? (
-        <p>Loading...</p>
-      ) : error ? (
-        <p className="text-red-600 font-semibold">Error: {error}</p>
-      ) : orders.length === 0 ? (
-        <p>No orders found for this status.</p>
+      <h2 className="text-xl font-semibold mb-4">Orders: {backendKey}</h2>
+      {orders.length === 0 ? (
+        <p>No orders found.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border rounded-md">
-            <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="py-2 px-4 border-b">Order Number</th>
-                <th className="py-2 px-4 border-b">Custom Status</th>
-                <th className="py-2 px-4 border-b">Fulfillment Status</th>
-                <th className="py-2 px-4 border-b">Metafields</th>
+        <table className="w-full text-sm text-left border border-gray-300">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-3 py-2 border-b">Order #</th>
+              <th className="px-3 py-2 border-b">Status</th>
+              <th className="px-3 py-2 border-b">Progress</th>
+              <th className="px-3 py-2 border-b">Assignee</th>
+              <th className="px-3 py-2 border-b">Fulfillment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr key={order._id} className="border-t">
+                <td className="px-3 py-2">{order.order_number}</td>
+                <td className="px-3 py-2">{order.custom_status || '—'}</td>
+                <td className="px-3 py-2">{order.progress || '—'}</td>
+                <td className="px-3 py-2">{(order.assignee || []).join(', ') || '—'}</td>
+                <td className="px-3 py-2">{order.fulfillment_status || '—'}</td>
               </tr>
-            </thead>
-            <tbody>
-              {orders.map((order, idx) => (
-                <tr key={idx} className="border-t">
-                  <td className="py-2 px-4">{order.order_number}</td>
-                  <td className="py-2 px-4">{order.custom_status}</td>
-                  <td className="py-2 px-4">
-                    {order.fulfillment_status || "N/A"}
-                  </td>
-                  <td className="py-2 px-4 text-sm text-gray-600">
-                    {order.metafields && Object.keys(order.metafields).length > 0
-                      ? Object.entries(order.metafields)
-                          .map(([key, value]) => `${key}: ${value}`)
-                          .join(", ")
-                      : "None"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
