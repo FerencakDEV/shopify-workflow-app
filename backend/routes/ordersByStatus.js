@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
-const get = (mf, key) => mf?.custom?.[key] || '';
+const get = (mf, key) => {
+  if (!mf) return '';
+  if (mf.custom && key in mf.custom) return mf.custom[key];
+  if (key in mf) return mf[key];
+  return '';
+};
 
 const countAssignees = (mf) => {
   return ['assignee', 'assignee-2', 'assignee-3', 'assignee-4']
@@ -75,13 +80,20 @@ router.get('/by-status', async (req, res) => {
           return status !== 'fulfilled' && customStatus === 'Need Attention';
 
         default:
-          return false;
+          // 🔍 Generic fallback: match against order_status, custom_status, or any progress fields
+          return (
+            (order.order_status === statusFilter) ||
+            (customStatus === statusFilter) ||
+            ['progress', 'progress-2', 'progress-3', 'progress-4'].some(
+              key => get(mf, key) === statusFilter
+            )
+          );
       }
     });
 
     res.json({ count: filtered.length, orders: filtered });
   } catch (err) {
-    console.error('Error fetching orders by status:', err);
+    console.error('❌ Error fetching orders by status:', err);
     res.status(500).json({ error: 'Failed to fetch filtered orders' });
   }
 });
