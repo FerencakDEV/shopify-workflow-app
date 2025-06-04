@@ -1,8 +1,48 @@
+// routes/orders.js
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
-// Mapa z query parametra na custom_status v databáze
+const {
+  getOrders,
+  getOrdersWithStatus,
+  getCustomStatus,
+  getOrderStats,
+  getOrderById,
+  getWorkloadByStaff
+} = require('../controllers/orderController');
+
+const { exportOrders } = require('../controllers/exportController');
+const { importOrdersCleaned } = require('../controllers/fullImportDescending');
+
+// 🔁 Import všetkých objednávok
+router.get('/full-import', async (req, res) => {
+  try {
+    await importOrdersCleaned();
+    res.status(200).json({ message: '✅ Import úspešne dokončený' });
+  } catch (err) {
+    console.error('❌ Import chyba z route:', {
+      message: err.message,
+      stack: err.stack,
+      url: err.config?.url,
+      method: err.config?.method,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      headers: err.response?.headers
+    });
+    res.status(500).json({ error: 'Nepodarilo sa spustiť import', detail: err.response?.data || err.message });
+  }
+});
+
+// 🔧 Ostatné štandardné endpointy
+router.get('/', getOrders);
+router.get('/with-status', getOrdersWithStatus);
+router.get('/export', exportOrders);
+router.get('/stats', getOrderStats);
+router.get('/workload', getWorkloadByStaff);
+
+// 📦 Mapa status key → custom_status
 const STATUS_MAP = {
   newOrders: 'New Order',
   urgentNewOrders: 'Urgent New Order',
@@ -14,11 +54,11 @@ const STATUS_MAP = {
   onHold: 'On Hold',
   readyForDispatch: 'Ready for Dispatch',
   readyForPickup: 'Ready for Pickup',
-  fulfilled: 'Fulfilled', // voliteľne
+  fulfilled: 'Fulfilled',
   allOrders: '.*'
 };
 
-// 📦 Route na získanie objednávok podľa custom_status
+// ✅ Endpoint: /by-status?status=newOrders
 router.get('/by-status', async (req, res) => {
   const key = req.query.status;
   const status = STATUS_MAP[key];
@@ -52,5 +92,8 @@ router.get('/by-status', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch filtered orders' });
   }
 });
+
+// 🟦 Detail objednávky podľa ID (musí ísť až na koniec)
+router.get('/:id', getOrderById);
 
 module.exports = router;
