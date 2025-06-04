@@ -27,11 +27,11 @@ const WidgetPage = () => {
 
         const data = await res.json();
 
-        if (!Array.isArray(data.orders)) {
-          throw new Error("Expected an array of orders in response");
-        }
+if (!Array.isArray(data)) {
+  throw new Error("Expected an array of orders in response");
+}
 
-        setOrders(data.orders);
+setOrders(data)
       } catch (err: any) {
         console.error("Failed to fetch orders", err);
         setError(err.message || "Unknown error");
