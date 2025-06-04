@@ -10,7 +10,7 @@ function App() {
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/orders/:key" element={<WidgetPage />} />
+        <Route path="/status/:slug" element={<WidgetPage />} /> 
       </Routes>
     </div>
   );
