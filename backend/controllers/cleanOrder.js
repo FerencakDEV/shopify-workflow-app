@@ -9,11 +9,16 @@ const cleanOrder = (order, metafields = []) => {
     return '';
   };
 
-  const fulfillment_status = order.fulfillment_status ?? 'unfulfilled';
   const custom_status_meta = getMeta('order-custom-status');
-
-  // Prioritizuj custom_status, inak fallback na fulfillment_status
+  let fulfillment_status = order.fulfillment_status ?? 'unfulfilled';
   const custom_status = custom_status_meta || fulfillment_status;
+
+  // 🎯 Úprava fulfillment_status podľa custom_status
+  if (custom_status === 'On Hold') {
+    fulfillment_status = 'on-hold';
+  } else if (custom_status === 'Ready for Pickup') {
+    fulfillment_status = 'ready-for-pickup';
+  }
 
   return {
     id: Number(order.id),
