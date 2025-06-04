@@ -18,6 +18,19 @@ interface Counts {
   allOrders: number;
 }
 
+const slugMap: Record<string, string> = {
+  newOrders: 'new-orders',
+  urgentNewOrders: 'urgent-new-orders',
+  assignedOrders: 'assigned-orders',
+  inProgress: 'in-progress',
+  printedDone: 'printed-done',
+  finishingBinding: 'finishing-binding',
+  toBeChecked: 'to-be-checked',
+  onHold: 'on-hold',
+  readyForDispatch: 'ready-for-dispatch',
+  needAttention: 'need-attention',
+};
+
 const Home = () => {
   const [counts, setCounts] = useState<Counts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +90,7 @@ const Home = () => {
                   label={widget.label}
                   sublabel={widget.sub}
                   color={widget.color}
-                  onClick={() => navigate(`/status/${widget.key}`)}
+                  onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
                 />
               ))}
             </div>
