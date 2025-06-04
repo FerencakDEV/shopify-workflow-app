@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 const statusMap: Record<string, string> = {
-  'new-orders': 'New Order',
-  'urgent-new-orders': 'Urgent New Order',
-  'assigned-orders': 'Assigned Order',
-  'in-progress': 'In Progress',
-  'printed-done': 'Printed-Done',
-  'finishing-binding': 'Finishing & Binding',
-  'to-be-checked': 'To be Checked',
-  'on-hold': 'On Hold',
-  'ready-for-dispatch': 'Ready for Dispatch',
-  'need-attention': 'Need Attention',
+  'new-orders': 'newOrders',
+  'urgent-new-orders': 'urgentNewOrders',
+  'assigned-orders': 'assignedOrders',
+  'in-progress': 'inProgress',
+  'printed-done': 'printedDone',
+  'finishing-binding': 'finishingBinding',
+  'to-be-checked': 'toBeChecked',
+  'on-hold': 'onHold',
+  'ready-for-dispatch': 'readyForDispatch',
+  'need-attention': 'needAttention',
 };
 
 const WidgetPage = () => {
