@@ -21,7 +21,7 @@ const WidgetPage = () => {
       try {
         const status = slug || "";
         const res = await fetch(
-          `https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${encodeURIComponent(slug || "")}`
+          `https://shopify-workflow-app-backend.onrender.com/api/orders/by-status/${encodeURIComponent(slug || "")}`
         );
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
 
