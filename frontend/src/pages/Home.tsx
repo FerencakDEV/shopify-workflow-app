@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import StatusWidget from '../components/StatusWidget';
 import WorkloadChart from '../components/WorkloadChart';
 
@@ -21,9 +22,7 @@ const Home = () => {
   const [counts, setCounts] = useState<Counts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -40,25 +39,6 @@ const Home = () => {
     };
     fetchCounts();
   }, []);
-
-  useEffect(() => {
-    if (!selectedStatus) return;
-
-    const fetchOrders = async () => {
-      setLoadingOrders(true);
-      try {
-        const res = await fetch(`https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${selectedStatus}`);
-        const data = await res.json();
-        setOrders(data.orders || []);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-      } finally {
-        setLoadingOrders(false);
-      }
-    };
-
-    fetchOrders();
-  }, [selectedStatus]);
 
   if (loading) return <div className="p-6 text-sm">Loading dashboard...</div>;
   if (error) return <div className="p-6 text-red-600 text-sm">Error: {error}</div>;
@@ -97,7 +77,7 @@ const Home = () => {
                   label={widget.label}
                   sublabel={widget.sub}
                   color={widget.color}
-                  onClick={() => setSelectedStatus(widget.key)}
+                  onClick={() => navigate(`/status/${widget.key}`)}
                 />
               ))}
             </div>
@@ -118,44 +98,6 @@ const Home = () => {
           </div>
         </div>
       </div>
-
-      {/* Orders Table */}
-      {selectedStatus && (
-        <div className="bg-white rounded-xl shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">
-            Orders: {selectedStatus.replace(/([A-Z])/g, ' $1')}
-          </h3>
-
-          {loadingOrders ? (
-            <p>Loading orders...</p>
-          ) : orders.length === 0 ? (
-            <p>No orders found.</p>
-          ) : (
-            <table className="w-full text-sm text-left border border-gray-300">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-3 py-2 border-b">Order #</th>
-                  <th className="px-3 py-2 border-b">Status</th>
-                  <th className="px-3 py-2 border-b">Progress</th>
-                  <th className="px-3 py-2 border-b">Assignee</th>
-                  <th className="px-3 py-2 border-b">Fulfillment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order._id} className="border-t">
-                    <td className="px-3 py-2">{order.order_number}</td>
-                    <td className="px-3 py-2">{order.custom_status || '—'}</td>
-                    <td className="px-3 py-2">{order.progress || '—'}</td>
-                    <td className="px-3 py-2">{(order.assignee || []).join(', ') || '—'}</td>
-                    <td className="px-3 py-2">{order.fulfillment_status || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
     </div>
   );
 };
