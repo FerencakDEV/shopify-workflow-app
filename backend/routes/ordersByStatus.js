@@ -29,7 +29,7 @@ router.get('/by-status', async (req, res) => {
     const filtered = allOrders.filter(order => {
       const status = (order.fulfillment_status || '').toLowerCase();
       const mf = order.metafields;
-      const customStatus = get(mf, 'order-custom-status');
+      const customStatus = get(mf, 'order-custom-status') || order.custom_status;
       const urgency = get(mf, 'turnaround-urgency')?.toUpperCase();
       const assignees = countAssignees(mf);
 
