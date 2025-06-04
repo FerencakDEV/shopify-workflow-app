@@ -1,111 +1,74 @@
-function cleanOrder(order, metafields = []) {
-  const metafieldMap = {};
-  for (const mf of metafields) {
-    metafieldMap[mf.key] = mf.value;
-  }
+// controllers/cleanOrder.js
+const cleanOrder = (order, metafields = []) => {
+  const getMeta = (key) =>
+    metafields.find((m) => m.key === key)?.value?.trim() || '';
 
-  const orderStatusRaw = metafieldMap['order-custom-status'] || '';
-  const orderStatus = orderStatusRaw.toLowerCase();
-  const isUrgent = metafieldMap['urgent'] === 'true';
-
-  // Fallback fulfillment_status
-  let fulfillmentStatus = order.fulfillment_status || null;
-  if (!fulfillmentStatus || fulfillmentStatus === 'null') {
-    if (orderStatus === 'cancelled') {
-      fulfillmentStatus = 'fulfilled';
-    } else if (orderStatus === 'on hold') {
-      fulfillmentStatus = 'on hold';
-    } else if (orderStatus === 'ready for pickup') {
-      fulfillmentStatus = 'ready for pickup';
-    } else {
-      fulfillmentStatus = 'unfulfilled';
-    }
-  }
-
-  // custom_status podľa widgetovej logiky
-  let customStatus = 'New Order';
-
-  if (orderStatus === 'cancelled') {
-    customStatus = 'Cancelled';
-  } else if (fulfillmentStatus === 'fulfilled') {
-    customStatus = 'Fulfilled';
-  } else if (fulfillmentStatus === 'partial') {
-    customStatus = 'Partially Fulfilled';
-  } else if (orderStatus === 'on hold' || fulfillmentStatus === 'on hold') {
-    fulfillmentStatus = 'on hold';
-    customStatus = 'On Hold';
-  } else if (orderStatus === 'ready for pickup' || fulfillmentStatus === 'ready for pickup') {
-    fulfillmentStatus = 'ready for pickup';
-    customStatus = 'Ready for Pickup';
-  } else if (isUrgent || orderStatus === 'urgent new order') {
-    customStatus = 'Urgent New Order';
-  } else if (orderStatus === 'assigned order') {
-    customStatus = 'Assigned Order';
-  } else if (orderStatus === 'finishing & binding') {
-    customStatus = 'Finishing & Binding';
-  } else if (orderStatus === 'to be checked') {
-    customStatus = 'To be Checked';
-  } else if (orderStatus === 'in progress') {
-    customStatus = 'In Progress';
-  } else if (orderStatus === 'ready for dispatch') {
-    customStatus = 'Ready for Dispatch';
-  } else if (orderStatus === 'need attention') {
-    customStatus = 'Need Attention';
-  }
+  const fulfillment_status = order.fulfillment_status ?? 'unfulfilled';
 
   return {
-    id: order.id,
-    name: order.name,
-    email: order.email || order.customer?.email || '',
-    customer: {
-      id: order.customer?.id || '',
-      email: order.customer?.email || '',
-      first_name: order.customer?.first_name || '',
-      last_name: order.customer?.last_name || ''
-    },
-    financial_status: order.financial_status || '',
-    fulfillment_status: fulfillmentStatus,
-    line_items: order.line_items || [],
-    created_at: order.created_at,
-    updated_at: order.updated_at,
-    processed_at: order.processed_at || null,
-    note: order.note || null,
-    order_number: order.order_number || '',
-    tags: Array.isArray(order.tags) ? order.tags : [order.tags || ''],
+    id: Number(order.id),
+    order_number: order.order_number,
+    name: order.name || '',
+    email: order.email || '',
+    note: order.note || '',
+    tags: order.tags || [],
     total_price: order.total_price || '',
+    financial_status: order.financial_status || '',
+    fulfillment_status,
+
+    created_at: new Date(order.created_at),
+    updated_at: new Date(order.updated_at),
+    processed_at: new Date(order.processed_at),
 
     assignee: [
-      metafieldMap['assignee-1'] || '',
-      metafieldMap['assignee-2'] || '',
-      metafieldMap['assignee-3'] || '',
-      metafieldMap['assignee-4'] || ''
+      getMeta('assignee-1'),
+      getMeta('assignee-2'),
+      getMeta('assignee-3'),
+      getMeta('assignee-4'),
     ],
-    assignee_1: metafieldMap['assignee-1'] || '',
-    assignee_2: metafieldMap['assignee-2'] || '',
-    assignee_3: metafieldMap['assignee-3'] || '',
-    assignee_4: metafieldMap['assignee-4'] || '',
+    assignee_1: getMeta('assignee-1'),
+    assignee_2: getMeta('assignee-2'),
+    assignee_3: getMeta('assignee-3'),
+    assignee_4: getMeta('assignee-4'),
 
     progress: [
-      metafieldMap['progress-1'] || '',
-      metafieldMap['progress-2'] || '',
-      metafieldMap['progress-3'] || '',
-      metafieldMap['progress-4'] || ''
+      getMeta('progress-1'),
+      getMeta('progress-2'),
+      getMeta('progress-3'),
+      getMeta('progress-4'),
     ],
-    progress_1: metafieldMap['progress-1'] || '',
-    progress_2: metafieldMap['progress-2'] || '',
-    progress_3: metafieldMap['progress-3'] || '',
-    progress_4: metafieldMap['progress-4'] || '',
+    progress_1: getMeta('progress-1'),
+    progress_2: getMeta('progress-2'),
+    progress_3: getMeta('progress-3'),
+    progress_4: getMeta('progress-4'),
 
-    custom_status: customStatus,
-    order_status: orderStatusRaw || 'New Order',
-    is_urgent: isUrgent,
+    custom_status: getMeta('order-custom-status'),
+    expected_time: getMeta('expected-time'),
+    is_urgent: getMeta('is-urgent') === 'true',
 
-    expected_time: metafieldMap['expected_time'] || '',
-    expected_time_1: metafieldMap['expected_time-1'] || '',
+    line_items: (order.line_items || []).map((item) => ({
+      title: item.title,
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      sku: item.sku,
+      vendor: item.vendor,
+      product_id: item.product_id,
+    })),
 
-    metafields: metafieldMap,
+    customer: {
+      id: order.customer?.id,
+      email: order.customer?.email,
+      first_name: order.customer?.first_name,
+      last_name: order.customer?.last_name,
+    },
+
     changelog: [],
+    metafields: metafields.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {}),
   };
-}
+};
 
 module.exports = { cleanOrder };

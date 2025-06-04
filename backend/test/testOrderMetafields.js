@@ -6,7 +6,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const SHOPIFY_API_URL = process.env.SHOPIFY_API_URL;
 const SHOPIFY_TOKEN = process.env.SHOPIFY_TOKEN;
-const ORDER_ID = '10130456740164'; // ← zmeň podľa potreby
+const ORDER_ID = '10142170448196'; // ← zmeň podľa potreby
 
 const HEADERS = {
   'X-Shopify-Access-Token': SHOPIFY_TOKEN,

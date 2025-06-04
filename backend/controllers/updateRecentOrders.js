@@ -1,16 +1,15 @@
+// scripts/updateRecentOrders.js
 const axios = require('axios');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const path = require('path');
 const chalk = require('chalk');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-const { cleanOrder } = require('./cleanOrder');
 const Order = require('../models/Order');
 
 dotenv.config({ path: path.resolve(__dirname, '../../backend/.env') });
 
-const { SHOPIFY_API_URL, SHOPIFY_TOKEN } = process.env;
+const { SHOPIFY_API_URL, SHOPIFY_TOKEN, MONGO_URI } = process.env;
 
 const HEADERS = {
   'X-Shopify-Access-Token': SHOPIFY_TOKEN,
@@ -23,114 +22,126 @@ const fetchMetafields = async (orderId) => {
     const res = await axios.get(url, { headers: HEADERS });
     return res.data.metafields || [];
   } catch (err) {
-    console.warn(`⚠️ Metafields fetch failed for Order ${orderId}`);
-    console.warn(`   → Message: ${err.message}`);
-    if (err.stack) console.warn(`   → Stack:`, err.stack.split('\n')[0]);
+    console.warn(`⚠️ Metafields fetch failed for Order ${orderId}: ${err.message}`);
     return [];
   }
 };
 
-const updateOrders = async () => {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log(chalk.green('✅ Connected to MongoDB'));
+const getMeta = (metafields, key, fallbackKey = null) => {
+  const found = metafields.find(m => m.key === key);
+  if (found) return found.value;
+  if (fallbackKey) {
+    const fallback = metafields.find(m => m.key === fallbackKey);
+    return fallback ? fallback.value : '';
+  }
+  return '';
+};
 
-  let count = 0;
+const updateOrders = async () => {
+  await mongoose.connect(MONGO_URI);
+  console.log(chalk.green('✅ MongoDB connected'));
+
   const customStatusStats = {};
   const assigneeStats = {};
-  let nextPageUrl = `${SHOPIFY_API_URL}/orders.json?limit=250&status=any`;
+  let total = 0;
+  let fixedFulfillmentCount = 0;
+  let nextPage = `${SHOPIFY_API_URL}/orders.json?limit=50&status=any`;
 
-  while (true) {
-    try {
-      console.log(chalk.gray('🔗 Fetching page:'), nextPageUrl);
-      const response = await axios.get(nextPageUrl, { headers: HEADERS });
-      const orders = response.data.orders;
-      if (!orders.length) break;
+  while (nextPage) {
+    console.log(chalk.gray('➡️ Fetching orders from:'), nextPage);
+    const res = await axios.get(nextPage, { headers: HEADERS });
+    const orders = res.data.orders;
 
-      for (const order of orders) {
-        if (!order.id) {
-          console.warn('❗ Order missing ID, skipping...');
-          continue;
-        }
+    for (const order of orders) {
+      const metafields = await fetchMetafields(order.id);
 
-        const metafields = await fetchMetafields(order.id);
-        const cleaned = cleanOrder(order, metafields);
+      const assignees = [
+        getMeta(metafields, 'assignee-1', 'assignee'),
+        getMeta(metafields, 'assignee-2'),
+        getMeta(metafields, 'assignee-3'),
+        getMeta(metafields, 'assignee-4')
+      ];
+      const progress = [
+        getMeta(metafields, 'progress-1', 'progress'),
+        getMeta(metafields, 'progress-2'),
+        getMeta(metafields, 'progress-3'),
+        getMeta(metafields, 'progress-4')
+      ];
+      const customStatus = getMeta(metafields, 'order-custom-status');
+      const expectedTime = getMeta(metafields, 'expected-time');
+      const isUrgent = (order.tags || []).includes('urgent') || customStatus?.toLowerCase()?.includes('urgent');
 
-        customStatusStats[cleaned.custom_status] = (customStatusStats[cleaned.custom_status] || 0) + 1;
-        cleaned.assignee.forEach(person => {
-          assigneeStats[person] = (assigneeStats[person] || 0) + 1;
-        });
+      const originalFulfillment = order.fulfillment_status;
+      const fulfillmentStatus = originalFulfillment === null ? 'unfulfilled' : originalFulfillment;
 
-        await Order.findOneAndUpdate(
-          { id: order.id },
-          { $set: cleaned },
-          { upsert: true, new: true }
+      const cleaned = {
+        id: order.id,
+        order_number: order.order_number,
+        email: order.email,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        custom_status: customStatus || '',
+        expected_time: expectedTime || '',
+        assignee: assignees,
+        assignee_1: assignees[0] || '',
+        assignee_2: assignees[1] || '',
+        assignee_3: assignees[2] || '',
+        assignee_4: assignees[3] || '',
+        progress: progress,
+        progress_1: progress[0] || '',
+        progress_2: progress[1] || '',
+        progress_3: progress[2] || '',
+        progress_4: progress[3] || '',
+        fulfillment_status: fulfillmentStatus,
+        is_urgent: !!isUrgent,
+        tags: order.tags || [],
+        line_items: order.line_items,
+        note: order.note || '',
+        metafields: Object.fromEntries(metafields.map(m => [m.key, m.value]))
+      };
+
+      await Order.findOneAndUpdate({ id: order.id }, { $set: cleaned }, { upsert: true });
+
+      if (originalFulfillment === null) {
+        fixedFulfillmentCount++;
+        console.log(
+          chalk.bgYellow.black(`⚠️ FIXED Order #${order.order_number}: fulfillment_status was null → set to 'unfulfilled'`)
         );
-
-        // 📦 Kompletný prehľad
-        console.log(chalk.cyan(`\n📦 Order: #${cleaned.order_number} | ID: ${cleaned.id}`));
-        console.log(`  • Created: ${cleaned.created_at?.toISOString() || '—'}`);
-        console.log(`  • Customer: ${cleaned.customer.first_name} ${cleaned.customer.last_name} (${cleaned.customer.email})`);
-        console.log(`  • Fulfillment: ${chalk.yellow(cleaned.fulfillment_status || 'unfulfilled')} → custom_status: ${chalk.magenta(cleaned.custom_status)}`);
-        console.log(`  • Assignee(s): ${chalk.blue(cleaned.assignee.join(', ') || '—')}`);
-        console.log(`  • Progress: ${chalk.blue(cleaned.progress.join(', ') || '—')}`);
-        console.log(`  • Expected: ${chalk.gray(cleaned.expected_time || '—')}`);
-
-        if (cleaned.line_items.length) {
-          console.log(`  • Items:`);
-          cleaned.line_items.forEach(item => {
-            console.log(`     - ${item.name} (${item.quantity}x) – $${item.price}`);
-          });
-        }
-
-        count++;
-        await delay(150);
       }
 
-      const linkHeader = response.headers['link'];
-if (linkHeader && linkHeader.includes('rel="next"')) {
-  const links = linkHeader.split(',').map(s => s.trim());
-  const nextLink = links.find(s => s.includes('rel="next"'));
-  if (nextLink) {
-    const urlMatch = nextLink.match(/<([^>]+)>/);
-    if (urlMatch && urlMatch[1]) {
-      nextPageUrl = urlMatch[1];
-      await delay(500);
-      continue;
+      console.log(
+        chalk.cyan(`📦 #${cleaned.order_number} (${cleaned.custom_status || '—'})`)
+        + ` | ${chalk.gray('Fulfillment:')} ${fulfillmentStatus}`
+        + ` | ${chalk.blue(cleaned.assignee.filter(Boolean).join(', ') || '—')}`
+      );
+
+      customStatusStats[cleaned.custom_status] = (customStatusStats[cleaned.custom_status] || 0) + 1;
+      cleaned.assignee.forEach(a => {
+        if (a) assigneeStats[a] = (assigneeStats[a] || 0) + 1;
+      });
+
+      total++;
+      await delay(150);
     }
+
+    const link = res.headers['link'];
+    const nextLink = link?.split(',').find(l => l.includes('rel="next"'));
+    nextPage = nextLink ? nextLink.match(/<([^>]+)>/)?.[1] : null;
+
+    await delay(500);
   }
-}
-console.log(chalk.yellow('⚠️ No next page – import finished.'));
-break;
 
-    } catch (err) {
-      console.error(chalk.red(`❌ Shopify fetch failed:`), err.message);
+  console.log(chalk.green(`\n🏁 Done! ${total} orders processed.`));
+  console.log(chalk.yellow(`🔧 Fixed ${fixedFulfillmentCount} fulfillment_status = null`));
+  console.log('\n📊 Custom Statuses:');
+  Object.entries(customStatusStats).forEach(([status, count]) =>
+    console.log(`  • ${status}: ${count}`));
 
-      if (err.response) {
-        console.log(chalk.red('📄 Response body:'));
-        console.log(typeof err.response.data === 'string' ? err.response.data.slice(0, 300) : err.response.data);
-        console.log(chalk.gray('📥 Status:'), err.response.status);
-        console.log(chalk.gray('📥 Content-Type:'), err.response.headers['content-type']);
-      }
-
-      break;
-    }
-  }
+  console.log('\n👤 Assignees:');
+  Object.entries(assigneeStats).forEach(([name, count]) =>
+    console.log(`  • ${name}: ${count}`));
 
   await mongoose.disconnect();
-  console.log(chalk.green(`\n🏁 Update complete – Total orders processed: ${count}`));
-
-  console.log('\n📊 Orders by Custom Status:');
-  Object.entries(customStatusStats).forEach(([status, count]) => {
-    console.log(`  • ${status}: ${count}`);
-  });
-  console.log(`  → Total: ${Object.values(customStatusStats).reduce((sum, val) => sum + val, 0)}\n`);
-
-  console.log('👤 Orders by Assignee:');
-  Object.entries(assigneeStats).forEach(([person, count]) => {
-    console.log(`  • ${person}: ${count}`);
-  });
-  console.log(`  → Total unique assignees: ${Object.keys(assigneeStats).length}`);
-  console.log(`  → Total assigned entries: ${Object.values(assigneeStats).reduce((sum, val) => sum + val, 0)}\n`);
 };
 
 updateOrders();
