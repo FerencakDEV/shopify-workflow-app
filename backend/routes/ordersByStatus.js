@@ -1,79 +1,59 @@
 const express = require('express');
 const router = express.Router();
-const Order = require('../models/Order');
+const Order = require('../../models/Order'); // uprav ak máš inú cestu
 
-// Helper funkcie
-const get = (mf, key) => mf?.custom?.[key] || '';
-
-const countAssignees = (order) => {
-  return [order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4]
-    .filter(a => a && a.trim() !== '').length;
+// Pomocné funkcie
+const getProgressArray = (order) => {
+  return [
+    order.progress_1,
+    order.progress_2,
+    order.progress_3,
+    order.progress_4
+  ].filter(Boolean);
 };
 
-const hasProgress = (order, name) => {
-  return [order.progress_1, order.progress_2, order.progress_3, order.progress_4]
-    .some(p => p === name);
-};
-
-// Hlavný endpoint
-router.get('/by-status', async (req, res) => {
-  const statusFilter = req.query.status;
-  if (!statusFilter) return res.status(400).json({ error: 'Missing status param' });
+router.get('/', async (req, res) => {
+  const status = req.query.status;
+  if (!status) return res.status(400).json({ error: 'Missing status parameter' });
 
   try {
-    const allOrders = await Order.find();
+    const allOrders = await Order.find({ fulfillment_status: { $ne: 'fulfilled' } });
 
     const filtered = allOrders.filter(order => {
-      const status = (order.fulfillment_status || '').toLowerCase();
-      const mf = order.metafields || {};
-      const customStatus = order.custom_status || get(mf, 'order-custom-status');
-      const urgency = get(mf, 'turnaround-urgency')?.toUpperCase();
-      const assignees = countAssignees(order);
+      const cs = order.custom_status || '';
+      const fs = order.fulfillment_status || '';
+      const progress = getProgressArray(order).map(p => p.toLowerCase());
 
-      if (['fulfilled', 'cancelled'].includes(status)) return false;
-
-      switch (statusFilter) {
+      switch (status) {
         case 'newOrders':
-          return status === 'unfulfilled' && customStatus === 'New Order' && assignees === 0;
+          return cs === 'New Order' && (!order.assignee_1 && !order.assignee_2 && !order.assignee_3 && !order.assignee_4);
 
         case 'urgentNewOrders':
-          return status === 'unfulfilled' && customStatus === 'Urgent New Order' && assignees === 0 && urgency === 'URGENT';
+          return cs === 'Urgent New Order' && order.is_urgent === true;
 
         case 'assignedOrders':
-          return ['unfulfilled', 'partially fulfilled'].includes(status)
-            && ['New Order', 'Urgent New Order'].includes(customStatus)
-            && assignees > 0
-            && hasProgress(order, 'Assigned');
+          return ['New Order', 'Urgent New Order'].includes(cs) && progress.includes('assigned');
 
         case 'inProgress':
-          return ['unfulfilled', 'partially fulfilled'].includes(status)
-            && ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus)
-            && hasProgress(order, 'In Progress');
-
-        case 'printedDone':
-          return ['unfulfilled', 'partially fulfilled'].includes(status)
-            && ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus)
-            && hasProgress(order, 'Printed-Done');
+          return ['New Order', 'Urgent New Order', 'Hold Released'].includes(cs) && progress.includes('in progress');
 
         case 'finishingBinding':
-          return ['New Order', 'Urgent New Order', 'Hold Released'].includes(customStatus)
-            && hasProgress(order, 'Finishing & Binding');
+          return ['New Order', 'Urgent New Order', 'Hold Released'].includes(cs) && progress.includes('finishing & binding');
 
         case 'toBeChecked':
-          return ['unfulfilled', 'partially fulfilled'].includes(status)
-            && hasProgress(order, 'To Be Checked');
+          return progress.includes('to be checked');
 
         case 'readyForDispatch':
-          return status === 'unfulfilled' && hasProgress(order, 'Ready for Dispatch');
+          return progress.includes('ready for dispatch');
 
         case 'readyForPickup':
-          return status !== 'fulfilled' && hasProgress(order, 'Ready for Pickup');
+          return progress.includes('ready for pickup');
 
         case 'onHold':
-          return status !== 'fulfilled' && customStatus === 'On Hold';
+          return cs === 'On Hold';
 
         case 'needAttention':
-          return status !== 'fulfilled' && customStatus === 'Need Attention';
+          return cs === 'Need Attention';
 
         default:
           return false;
@@ -81,9 +61,10 @@ router.get('/by-status', async (req, res) => {
     });
 
     res.json({ count: filtered.length, orders: filtered });
+
   } catch (err) {
-    console.error('Error fetching orders by status:', err);
-    res.status(500).json({ error: 'Failed to fetch filtered orders' });
+    console.error('❌ Error fetching by status:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
