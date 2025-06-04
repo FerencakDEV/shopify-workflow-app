@@ -33,20 +33,6 @@ router.get('/status-counts', async (req, res) => {
       allOrders: orders.length
     };
 
-    const getProgressArray = (order) => [
-      (order.progress_1 || '').trim().toLowerCase(),
-      (order.progress_2 || '').trim().toLowerCase(),
-      (order.progress_3 || '').trim().toLowerCase(),
-      (order.progress_4 || '').trim().toLowerCase()
-    ].filter(Boolean);
-
-    const getAssigneeArray = (order) => [
-      (order.assignee_1 || '').trim(),
-      (order.assignee_2 || '').trim(),
-      (order.assignee_3 || '').trim(),
-      (order.assignee_4 || '').trim()
-    ].filter(Boolean);
-
     const knownProgresses = [
       'assigned',
       'in progress',
@@ -57,89 +43,89 @@ router.get('/status-counts', async (req, res) => {
       'ready for pickup'
     ];
 
-    orders.forEach(order => {
+    for (const order of orders) {
       const status = (order.fulfillment_status || '').toLowerCase();
-      const orderStatus = (order.order_status || '').trim();
+      const orderStatus = (order.order_status || '').toLowerCase();
       const isUrgent = order.is_urgent === true;
-      const progresses = getProgressArray(order);
-      const assignees = getAssigneeArray(order);
+
+      const progresses = [
+        order.progress_1,
+        order.progress_2,
+        order.progress_3,
+        order.progress_4
+      ].map(p => (p || '').trim().toLowerCase()).filter(Boolean);
+
+      const assignees = [
+        order.assignee_1,
+        order.assignee_2,
+        order.assignee_3,
+        order.assignee_4
+      ].map(a => (a || '').trim()).filter(Boolean);
 
       const noProgress = progresses.length === 0;
       const noAssignee = assignees.length === 0;
 
-      // Vyradíme fulfilled/cancelled
-      if (['fulfilled', 'cancelled'].includes(status)) return;
+      // Filter out completed orders
+      if (['fulfilled', 'cancelled'].includes(status)) continue;
 
-      // On Hold má prioritu
-      if (status === 'onhold' || orderStatus === 'On Hold') {
-        counts.onHold += 1;
-        return;
+      if (status === 'on hold' || orderStatus === 'on hold') {
+        counts.onHold++;
+        continue;
       }
 
-      // Ready for Pickup má prioritu
-      if (status === 'ready for pickup' || orderStatus === 'Ready for Pickup') {
-        counts.readyForPickup += 1;
-        return;
+      if (status === 'ready for pickup' || orderStatus === 'ready for pickup') {
+        counts.readyForPickup++;
+        continue;
       }
 
-      // Urgent New Orders
-      if (isUrgent && noProgress && noAssignee) {
-        counts.urgentNewOrders += 1;
-        return;
+      // Strict new/urgent check (must have no assignee and no progress)
+      if ((orderStatus === 'urgent new order' || isUrgent) && noProgress && noAssignee) {
+        counts.urgentNewOrders++;
+        continue;
       }
 
-      // New Orders
-      if (!isUrgent && orderStatus === 'New Order' && noProgress && noAssignee) {
-        counts.newOrders += 1;
-        return;
+      if (orderStatus === 'new order' && !isUrgent && noProgress && noAssignee) {
+        counts.newOrders++;
+        continue;
       }
 
-      // Ostatné stavy akceptujú len unfulfilled / partial
-      if (!['unfulfilled', 'partial'].includes(status)) return;
+      // Widget counts by progress
+      const used = new Set();
 
-      // Zaradenie podľa progress
-      const usedProgress = new Set();
-      progresses.forEach(p => {
-        if (!knownProgresses.includes(p)) return;
-        if (usedProgress.has(p)) return;
-        usedProgress.add(p);
+      for (const progress of progresses) {
+        if (used.has(progress)) continue;
+        used.add(progress);
 
-        switch (p) {
+        switch (progress) {
           case 'assigned':
-            counts.assignedOrders += 1;
+            counts.assignedOrders++;
             break;
           case 'in progress':
-            counts.inProgress += 1;
+            counts.inProgress++;
             break;
           case 'printed-done':
-            counts.printedDone += 1;
+            counts.printedDone++;
             break;
           case 'finishing & binding':
-            counts.finishingBinding += 1;
+            counts.finishingBinding++;
             break;
           case 'to be checked':
-            counts.toBeChecked += 1;
+            counts.toBeChecked++;
             break;
           case 'ready for dispatch':
-            counts.readyForDispatch += 1;
-            break;
-          case 'ready for pickup':
-            counts.readyForPickup += 1;
+            counts.readyForDispatch++;
             break;
         }
-      });
-
-      // Need Attention = neznámy progress alebo neúplné priradenie
-      const hasUnknownProgress = progresses.some(p => !knownProgresses.includes(p));
-      const hasOnlyPartialAssignment = progresses.length !== assignees.length;
-
-      if (
-        !['On Hold', 'Ready for Pickup'].includes(orderStatus) &&
-        (hasUnknownProgress || hasOnlyPartialAssignment)
-      ) {
-        counts.needAttention += 1;
       }
-    });
+
+      // If inconsistent number of assignees/progress OR unknown progress, add to need attention
+      const hasUnknown = progresses.some(p => !knownProgresses.includes(p));
+      const partial = progresses.length !== assignees.length;
+
+      if (!['on hold', 'ready for pickup'].includes(orderStatus) && (hasUnknown || partial)) {
+        counts.needAttention++;
+      }
+    }
 
     res.json(counts);
   } catch (err) {
