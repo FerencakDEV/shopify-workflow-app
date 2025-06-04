@@ -1,4 +1,3 @@
-// controllers/cleanOrder.js
 const cleanOrder = (order, metafields = []) => {
   const getMeta = (key, fallbackKey = null) => {
     const found = metafields.find((m) => m.key === key);
@@ -11,6 +10,10 @@ const cleanOrder = (order, metafields = []) => {
   };
 
   const fulfillment_status = order.fulfillment_status ?? 'unfulfilled';
+  const custom_status_meta = getMeta('order-custom-status');
+
+  // Prioritizuj custom_status, inak fallback na fulfillment_status
+  const custom_status = custom_status_meta || fulfillment_status;
 
   return {
     id: Number(order.id),
@@ -49,7 +52,7 @@ const cleanOrder = (order, metafields = []) => {
     progress_3: getMeta('progress-3'),
     progress_4: getMeta('progress-4'),
 
-    custom_status: getMeta('order-custom-status'),
+    custom_status,
     expected_time: getMeta('expected-time'),
     is_urgent: getMeta('is-urgent') === 'true',
 
