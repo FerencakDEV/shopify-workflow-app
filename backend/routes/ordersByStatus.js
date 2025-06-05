@@ -22,8 +22,8 @@ router.get('/by-status', async (req, res) => {
     switch (status) {
       case 'newOrders':
         query = {
-  custom_status: regex('New Order'),
-  fulfillment_status: { $ne: 'fulfilled' }
+  custom_status: regex('New Order')
+ 
 };
         break;
 
