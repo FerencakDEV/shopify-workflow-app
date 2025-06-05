@@ -8,6 +8,7 @@ const orderRoutes = require('./routes/orders');
 const ordersByStatusRoutes = require('./routes/ordersByStatus');
 const dashboardRoutes = require('./routes/dashboard');
 const workloadChartRoutes = require('./routes/workloadChart');
+const ordersAllRoutes = require('./routes/ordersAll'); // ak si to dal do samostatného súboru
 const { cleanOrder } = require('./controllers/cleanOrder');
 
 const app = express();
@@ -43,6 +44,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/dashboard', workloadChartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/orders', ordersByStatusRoutes);
+app.use('/api/orders', ordersAllRoutes);
 
 // ✅ Webhooks
 
