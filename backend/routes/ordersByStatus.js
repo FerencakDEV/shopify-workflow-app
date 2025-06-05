@@ -18,6 +18,7 @@ router.get('/by-status', async (req, res) => {
           fulfillment_status: { $ne: 'fulfilled' },
           $or: [
             { assignee: { $size: 0 } },
+            { assignee: { $not: { $elemMatch: { $ne: '' } } } },
             { assignee: { $exists: false } },
             { assignee: null }
           ]
@@ -31,6 +32,7 @@ router.get('/by-status', async (req, res) => {
           is_urgent: true,
           $or: [
             { assignee: { $size: 0 } },
+            { assignee: { $not: { $elemMatch: { $ne: '' } } } },
             { assignee: { $exists: false } },
             { assignee: null }
           ]
@@ -147,6 +149,9 @@ router.get('/by-status', async (req, res) => {
         return res.status(400).json({ error: 'Invalid status param' });
     }
 
+    console.log('🧪 Status:', status);
+    console.log('🧪 Mongo query:', JSON.stringify(query, null, 2));
+
     const orders = await Order.find(query, {
       order_number: 1,
       custom_status: 1,
@@ -155,6 +160,8 @@ router.get('/by-status', async (req, res) => {
       progress: 1,
       metafields: 1
     }).sort({ created_at: -1 }).limit(300);
+
+    console.log(`✅ Found ${orders.length} orders for status ${status}`);
 
     res.json({ count: orders.length, orders });
 
