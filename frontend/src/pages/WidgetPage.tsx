@@ -1,3 +1,4 @@
+// WidgetPage.tsx
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -14,6 +15,19 @@ const statusMap: Record<string, string> = {
   'need-attention': 'needAttention',
 };
 
+const labelMap: Record<string, string> = {
+  newOrders: 'New Orders',
+  urgentNewOrders: 'Urgent New Orders',
+  assignedOrders: 'Assigned Orders',
+  inProgress: 'In Progress',
+  printedDone: 'Printed-Done',
+  finishingBinding: 'Finishing & Binding',
+  toBeChecked: 'To be Checked',
+  onHold: 'On Hold',
+  readyForDispatch: 'Ready for Dispatch',
+  needAttention: 'Need Attention',
+};
+
 const WidgetPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const backendStatus = slug ? statusMap[slug] : undefined;
@@ -24,6 +38,7 @@ const WidgetPage = () => {
 
   useEffect(() => {
     if (!backendStatus) return;
+    console.log('📤 Requesting orders for:', backendStatus);
 
     const fetchOrders = async () => {
       try {
@@ -32,8 +47,17 @@ const WidgetPage = () => {
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setOrders(data.orders || []);
+        console.log('📥 Orders response:', data);
+
+        if (!data.orders) {
+          console.warn('⚠️ Missing `orders` in API response:', data);
+          setError('Invalid API response');
+          return;
+        }
+
+        setOrders(data.orders);
       } catch (err) {
+        console.error('❌ Error loading orders:', err);
         setError('Failed to load orders.');
       } finally {
         setLoading(false);
@@ -52,7 +76,7 @@ const WidgetPage = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">📦 Orders: {backendStatus}</h2>
+      <h2 className="text-xl font-semibold mb-4">📦 Orders: {labelMap[backendStatus]}</h2>
       {orders.length === 0 ? (
         <p>No orders found for this status.</p>
       ) : (
@@ -72,8 +96,8 @@ const WidgetPage = () => {
                 <tr key={order._id} className="border-t">
                   <td className="px-3 py-2">{order.order_number}</td>
                   <td className="px-3 py-2">{order.custom_status || '—'}</td>
-                  <td className="px-3 py-2">{order.progress || '—'}</td>
-                  <td className="px-3 py-2">{(order.assignee || []).join(', ') || '—'}</td>
+                  <td className="px-3 py-2">{(order.progress || []).filter(Boolean).join(', ') || '—'}</td>
+                  <td className="px-3 py-2">{(order.assignee || []).filter(Boolean).join(', ') || '—'}</td>
                   <td className="px-3 py-2">{order.fulfillment_status || '—'}</td>
                 </tr>
               ))}
