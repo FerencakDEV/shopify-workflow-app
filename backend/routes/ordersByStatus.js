@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Order = require('../models/Order'); // uprav ak máš inú cestu
+const Order = require('../models/Order');
 
 // Pomocné funkcie
 const getProgressArray = (order) => {
@@ -12,59 +12,163 @@ const getProgressArray = (order) => {
   ].filter(Boolean);
 };
 
-router.get('/', async (req, res) => {
+router.get('/by-status', async (req, res) => {
   const status = req.query.status;
-  if (!status) return res.status(400).json({ error: 'Missing status parameter' });
+  if (!status) return res.status(400).json({ error: 'Missing status param' });
 
   try {
-    const allOrders = await Order.find({ fulfillment_status: { $ne: 'fulfilled' } });
+    let query = {};
 
-    const filtered = allOrders.filter(order => {
-      const cs = order.custom_status || '';
-      const fs = order.fulfillment_status || '';
-      const progress = getProgressArray(order).map(p => p.toLowerCase());
+    switch (status) {
+      case 'newOrders':
+        query = {
+          custom_status: 'New Order',
+          fulfillment_status: { $ne: 'fulfilled' },
+          $or: [
+            { assignee: { $size: 0 } },
+            { assignee: { $exists: false } },
+            { assignee: null }
+          ]
+        };
+        break;
 
-      switch (status) {
-        case 'newOrders':
-          return cs === 'New Order' && (!order.assignee_1 && !order.assignee_2 && !order.assignee_3 && !order.assignee_4);
+      case 'urgentNewOrders':
+        query = {
+          custom_status: 'Urgent New Order',
+          fulfillment_status: { $ne: 'fulfilled' },
+          is_urgent: true,
+          $or: [
+            { assignee: { $size: 0 } },
+            { assignee: { $exists: false } },
+            { assignee: null }
+          ]
+        };
+        break;
 
-        case 'urgentNewOrders':
-          return cs === 'Urgent New Order' && order.is_urgent === true;
+      case 'assignedOrders':
+        query = {
+          custom_status: { $in: ['New Order', 'Urgent New Order'] },
+          fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
+          $or: [
+            { progress: { $in: ['Assigned'] } },
+            { progress_1: 'Assigned' },
+            { progress_2: 'Assigned' },
+            { progress_3: 'Assigned' },
+            { progress_4: 'Assigned' },
+          ],
+          assignee: { $exists: true, $not: { $size: 0 } }
+        };
+        break;
 
-        case 'assignedOrders':
-          return ['New Order', 'Urgent New Order'].includes(cs) && progress.includes('assigned');
+      case 'inProgress':
+        query = {
+          custom_status: { $in: ['New Order', 'Urgent New Order', 'Hold Released'] },
+          fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
+          $or: [
+            { progress: { $in: ['In Progress'] } },
+            { progress_1: 'In Progress' },
+            { progress_2: 'In Progress' },
+            { progress_3: 'In Progress' },
+            { progress_4: 'In Progress' },
+          ]
+        };
+        break;
 
-        case 'inProgress':
-          return ['New Order', 'Urgent New Order', 'Hold Released'].includes(cs) && progress.includes('in progress');
+      case 'finishingBinding':
+        query = {
+          custom_status: { $in: ['New Order', 'Urgent New Order', 'Hold Released'] },
+          fulfillment_status: { $ne: 'fulfilled' },
+          $or: [
+            { progress: { $in: ['Finishing & Binding'] } },
+            { progress_1: 'Finishing & Binding' },
+            { progress_2: 'Finishing & Binding' },
+            { progress_3: 'Finishing & Binding' },
+            { progress_4: 'Finishing & Binding' },
+          ]
+        };
+        break;
 
-        case 'finishingBinding':
-          return ['New Order', 'Urgent New Order', 'Hold Released'].includes(cs) && progress.includes('finishing & binding');
+      case 'toBeChecked':
+        query = {
+          fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
+          $or: [
+            { progress: { $in: ['To be Checked'] } },
+            { progress_1: 'To be Checked' },
+            { progress_2: 'To be Checked' },
+            { progress_3: 'To be Checked' },
+            { progress_4: 'To be Checked' },
+          ]
+        };
+        break;
 
-        case 'toBeChecked':
-          return progress.includes('to be checked');
+      case 'readyForDispatch':
+        query = {
+          fulfillment_status: 'unfulfilled',
+          $or: [
+            { progress: { $in: ['Ready for Dispatch'] } },
+            { progress_1: 'Ready for Dispatch' },
+            { progress_2: 'Ready for Dispatch' },
+            { progress_3: 'Ready for Dispatch' },
+            { progress_4: 'Ready for Dispatch' },
+          ]
+        };
+        break;
 
-        case 'readyForDispatch':
-          return progress.includes('ready for dispatch');
+      case 'readyForPickup':
+        query = {
+          fulfillment_status: { $ne: 'fulfilled' },
+          $or: [
+            { progress: { $in: ['Ready for Pickup'] } },
+            { progress_1: 'Ready for Pickup' },
+            { progress_2: 'Ready for Pickup' },
+            { progress_3: 'Ready for Pickup' },
+            { progress_4: 'Ready for Pickup' },
+          ]
+        };
+        break;
 
-        case 'readyForPickup':
-          return progress.includes('ready for pickup');
+      case 'onHold':
+        query = {
+          custom_status: 'On Hold',
+          fulfillment_status: { $ne: 'fulfilled' }
+        };
+        break;
 
-        case 'onHold':
-          return cs === 'On Hold';
+      case 'needAttention':
+        query = {
+          custom_status: 'Need Attention',
+          fulfillment_status: { $ne: 'fulfilled' }
+        };
+        break;
 
-        case 'needAttention':
-          return cs === 'Need Attention';
+      case 'fulfilled':
+        query = {
+          fulfillment_status: 'fulfilled'
+        };
+        break;
 
-        default:
-          return false;
-      }
-    });
+      case 'allOrders':
+        query = {};
+        break;
 
-    res.json({ count: filtered.length, orders: filtered });
+      default:
+        return res.status(400).json({ error: 'Invalid status param' });
+    }
+
+    const orders = await Order.find(query, {
+      order_number: 1,
+      custom_status: 1,
+      fulfillment_status: 1,
+      assignee: 1,
+      progress: 1,
+      metafields: 1
+    }).sort({ created_at: -1 }).limit(300);
+
+    res.json({ count: orders.length, orders });
 
   } catch (err) {
-    console.error('❌ Error fetching by status:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('❌ Error in /by-status:', err.message);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
