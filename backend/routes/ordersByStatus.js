@@ -4,7 +4,15 @@ const Order = require('../models/Order');
 
 router.get('/by-status', async (req, res) => {
   const status = req.query.status;
-  if (!status) return res.status(400).json({ error: 'Missing status param' });
+
+  console.log('==============================');
+  console.log('📥 Route /by-status hit');
+  console.log('📌 Query param status:', status);
+
+  if (!status) {
+    console.warn('⚠️ Missing status parameter in query.');
+    return res.status(400).json({ error: 'Missing status param' });
+  }
 
   try {
     let query = {};
@@ -146,27 +154,48 @@ router.get('/by-status', async (req, res) => {
         break;
 
       default:
+        console.error('🚫 Invalid status param received:', status);
         return res.status(400).json({ error: 'Invalid status param' });
     }
 
-    console.log('🧪 Status:', status);
-    console.log('🧪 Mongo query:', JSON.stringify(query, null, 2));
+    console.log('🔍 Final Mongo Query:', JSON.stringify(query, null, 2));
 
     const orders = await Order.find(query, {
       order_number: 1,
       custom_status: 1,
       fulfillment_status: 1,
       assignee: 1,
+      assignee_1: 1,
+      assignee_2: 1,
+      assignee_3: 1,
+      assignee_4: 1,
       progress: 1,
+      progress_1: 1,
+      progress_2: 1,
+      progress_3: 1,
+      progress_4: 1,
       metafields: 1
     }).sort({ created_at: -1 }).limit(300);
 
-    console.log(`✅ Found ${orders.length} orders for status ${status}`);
+    console.log(`📦 Total matched orders: ${orders.length}`);
+    if (orders.length > 0) {
+      const sample = orders[0];
+      console.log('📋 Sample order:', {
+        order_number: sample.order_number,
+        custom_status: sample.custom_status,
+        fulfillment_status: sample.fulfillment_status,
+        assignee: sample.assignee,
+        progress: sample.progress,
+        metafields: sample.metafields,
+      });
+    }
 
+    console.log('✅ Route completed.\n==============================');
     res.json({ count: orders.length, orders });
 
   } catch (err) {
     console.error('❌ Error in /by-status:', err);
+    console.log('==============================');
     res.status(500).json({ error: 'Server error' });
   }
 });
