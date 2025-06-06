@@ -1,19 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-const mockData = [
-  { assignee: 'Q1', inProgress: 2, assigned: 4 },
-  { assignee: 'Q2', inProgress: 3, assigned: 3 },
-  { assignee: 'Online', inProgress: 1, assigned: 2 },
-  { assignee: 'Thesis', inProgress: 0, assigned: 0 },
-  { assignee: 'Design', inProgress: 2, assigned: 4 },
-  { assignee: 'Design 2', inProgress: 1, assigned: 2 },
-  { assignee: 'MagicTouch', inProgress: 4, assigned: 6 },
-  { assignee: 'Posters', inProgress: 2, assigned: 1 }
-];
+interface WorkloadData {
+  assignee: string;
+  inProgress: number;
+  assigned: number;
+}
 
 const WorkloadChart = () => {
-  const maxInProgress = Math.max(...mockData.map((x) => x.inProgress));
-  const maxAssigned = Math.max(...mockData.map((x) => x.assigned));
+  const [data, setData] = useState<WorkloadData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/orders/workload-chart');
+        const json = await res.json();
+        setData(json.data || []);
+      } catch (err) {
+        console.error('Failed to load workload data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const maxInProgress = Math.max(...data.map((x) => x.inProgress), 1);
+  const maxAssigned = Math.max(...data.map((x) => x.assigned), 1);
+
+  if (loading) return <div className="px-3 py-5 text-sm text-gray-500">Loading workload...</div>;
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -26,7 +41,7 @@ const WorkloadChart = () => {
 
       {/* Rows */}
       <div className="divide-y flex-grow">
-        {mockData.map(({ assignee, inProgress, assigned }) => (
+        {data.map(({ assignee, inProgress, assigned }) => (
           <div
             key={assignee}
             className="grid grid-cols-[1fr_2fr_2fr] items-center px-3 py-3 text-[15px]"
@@ -39,7 +54,9 @@ const WorkloadChart = () => {
               <div className="relative h-3 bg-orange-100 rounded w-full max-w-[180px]">
                 <div
                   className="absolute top-0 left-0 h-full bg-orange-500 rounded"
-                  style={{ width: `${(inProgress / (maxInProgress || 1)) * 100}%` }}
+                  style={{
+                    width: `${Math.max((inProgress / maxInProgress) * 100, 5)}%`
+                  }}
                 />
               </div>
             </div>
@@ -50,7 +67,9 @@ const WorkloadChart = () => {
               <div className="relative h-3 bg-gray-200 rounded w-full max-w-[180px]">
                 <div
                   className="absolute top-0 left-0 h-full bg-gray-700 rounded"
-                  style={{ width: `${(assigned / (maxAssigned || 1)) * 100}%` }}
+                  style={{
+                    width: `${Math.max((assigned / maxAssigned) * 100, 5)}%`
+                  }}
                 />
               </div>
             </div>
