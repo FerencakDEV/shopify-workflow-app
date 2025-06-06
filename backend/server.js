@@ -44,7 +44,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/orders', workloadChartRoute);
 const ordersByStatusRoutes = require('./routes/ordersByStatus');
 app.use('/api/orders', ordersByStatusRoutes);
-
+const byAssigneeRoutes = require('./routes/byAssignee');
+app.use('/api/orders', byAssigneeRoutes);
 
 // ✅ Webhooks
 
