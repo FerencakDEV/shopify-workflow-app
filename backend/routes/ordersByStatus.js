@@ -19,16 +19,31 @@ router.get('/by-status', async (req, res) => {
   try {
     switch (status) {
       case 'newOrders':
-        query = {
-          custom_status: regex('New Order'),
-          fulfillment_status: { $ne: 'fulfilled' },
-          $or: [
-            { assignee: { $size: 0 } },
-            { assignee: { $exists: false } },
-            { assignee: null }
-          ]
-        };
-        break;
+  query = {
+    custom_status: regex('New Order'),
+    fulfillment_status: { $ne: 'fulfilled' },
+    $and: [
+      {
+        $or: [
+          { assignee: { $exists: false } },
+          { assignee: null },
+          { assignee: [] },
+          { assignee: [""] },
+          { assignee: { $not: { $elemMatch: { $ne: "" } } } }
+        ]
+      },
+      {
+        $and: [
+          { $or: [{ assignee_1: { $exists: false } }, { assignee_1: "" }] },
+          { $or: [{ assignee_2: { $exists: false } }, { assignee_2: "" }] },
+          { $or: [{ assignee_3: { $exists: false } }, { assignee_3: "" }] },
+          { $or: [{ assignee_4: { $exists: false } }, { assignee_4: "" }] }
+        ]
+      }
+    ]
+  };
+  break;
+
 
       case 'urgentNewOrders':
         query = {
