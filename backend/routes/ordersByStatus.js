@@ -20,32 +20,23 @@ router.get('/by-status', async (req, res) => {
     switch (status) {
       case 'newOrders':
   query = {
-    custom_status: regex('New Order'),
+    order_status: regex('New Order'),
     fulfillment_status: { $ne: 'fulfilled' },
     $and: [
       {
         $or: [
-          { assignee: { $exists: false } },
-          { assignee: null },
-          { assignee: [] },
-          { assignee: [""] },
-          { assignee: { $not: { $elemMatch: { $ne: "" } } } }
+          { assignee_1: { $exists: false } }, { assignee_1: '' },
+          { assignee_2: { $exists: false } }, { assignee_2: '' },
+          { assignee_3: { $exists: false } }, { assignee_3: '' },
+          { assignee_4: { $exists: false } }, { assignee_4: '' }
         ]
       },
       {
-        $and: [
-          { $or: [{ assignee_1: { $exists: false } }, { assignee_1: "" }] },
-          { $or: [{ assignee_2: { $exists: false } }, { assignee_2: "" }] },
-          { $or: [{ assignee_3: { $exists: false } }, { assignee_3: "" }] },
-          { $or: [{ assignee_4: { $exists: false } }, { assignee_4: "" }] }
-        ]
-      },
-      {
-        $and: [
-          { $or: [{ progress_1: { $exists: false } }, { progress_1: "" }] },
-          { $or: [{ progress_2: { $exists: false } }, { progress_2: "" }] },
-          { $or: [{ progress_3: { $exists: false } }, { progress_3: "" }] },
-          { $or: [{ progress_4: { $exists: false } }, { progress_4: "" }] }
+        $or: [
+          { progress_1: { $exists: false } }, { progress_1: '' },
+          { progress_2: { $exists: false } }, { progress_2: '' },
+          { progress_3: { $exists: false } }, { progress_3: '' },
+          { progress_4: { $exists: false } }, { progress_4: '' }
         ]
       }
     ]
