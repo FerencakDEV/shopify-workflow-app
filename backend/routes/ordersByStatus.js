@@ -16,35 +16,30 @@ router.get('/by-status', async (req, res) => {
 
   try {
     let query = {};
-
     const regex = (val) => ({ $regex: new RegExp(`^${val}$`, 'i') });
-
-    // Common filters
     const unfulfilled = ['unfulfilled', 'partially_fulfilled'];
 
     switch (status) {
       case 'newOrders':
         query = {
-          $or: [
-            { custom_status: regex('New Order') },
-            { 'metafields.order-custom-status': regex('New Order') }
-          ],
+          custom_status: regex('New Order'),
           fulfillment_status: { $ne: 'fulfilled' },
+          $or: [
+            { assignee: { $exists: false } },
+            { assignee: { $size: 0 } },
+            { assignee: null }
+          ]
         };
         break;
 
       case 'urgentNewOrders':
         query = {
-          $or: [
-            { custom_status: regex('Urgent New Order') },
-            { 'metafields.order-custom-status': regex('Urgent New Order') }
-          ],
+          custom_status: regex('Urgent New Order'),
           is_urgent: true,
           fulfillment_status: { $ne: 'fulfilled' },
           $or: [
-            { assignee: { $size: 0 } },
-            { assignee: { $not: { $elemMatch: { $ne: '' } } } },
             { assignee: { $exists: false } },
+            { assignee: { $size: 0 } },
             { assignee: null }
           ]
         };
@@ -52,10 +47,7 @@ router.get('/by-status', async (req, res) => {
 
       case 'assignedOrders':
         query = {
-          $or: [
-            { custom_status: { $in: [regex('New Order'), regex('Urgent New Order')] } },
-            { 'metafields.order-custom-status': { $in: [regex('New Order'), regex('Urgent New Order')] } }
-          ],
+          custom_status: { $in: [regex('New Order'), regex('Urgent New Order')] },
           fulfillment_status: { $in: unfulfilled },
           $or: [
             { progress: { $in: [regex('Assigned')] } },
@@ -70,10 +62,7 @@ router.get('/by-status', async (req, res) => {
 
       case 'inProgress':
         query = {
-          $or: [
-            { custom_status: { $in: [regex('New Order'), regex('Urgent New Order'), regex('Hold Released')] } },
-            { 'metafields.order-custom-status': { $in: [regex('New Order'), regex('Urgent New Order'), regex('Hold Released')] } }
-          ],
+          custom_status: { $in: [regex('New Order'), regex('Urgent New Order'), regex('Hold Released')] },
           fulfillment_status: { $in: unfulfilled },
           $or: [
             { progress: { $in: [regex('In Progress')] } },
@@ -85,9 +74,22 @@ router.get('/by-status', async (req, res) => {
         };
         break;
 
+      case 'printedDone':
+        query = {
+          fulfillment_status: { $in: unfulfilled },
+          $or: [
+            { progress: { $in: [regex('Printed-Done')] } },
+            { progress_1: regex('Printed-Done') },
+            { progress_2: regex('Printed-Done') },
+            { progress_3: regex('Printed-Done') },
+            { progress_4: regex('Printed-Done') }
+          ]
+        };
+        break;
+
       case 'finishingBinding':
         query = {
-          fulfillment_status: { $ne: 'fulfilled' },
+          fulfillment_status: { $in: unfulfilled },
           $or: [
             { progress: { $in: [regex('Finishing & Binding')] } },
             { progress_1: regex('Finishing & Binding') },
@@ -113,20 +115,25 @@ router.get('/by-status', async (req, res) => {
 
       case 'readyForDispatch':
         query = {
-          fulfillment_status: 'unfulfilled',
+          fulfillment_status: { $in: unfulfilled },
           $or: [
             { progress: { $in: [regex('Ready for Dispatch')] } },
             { progress_1: regex('Ready for Dispatch') },
             { progress_2: regex('Ready for Dispatch') },
             { progress_3: regex('Ready for Dispatch') },
-            { progress_4: regex('Ready for Dispatch') }
+            { progress_4: regex('Ready for Dispatch') },
+            { 'metafields.progress': regex('Ready for Dispatch') },
+            { 'metafields.progress-1': regex('Ready for Dispatch') },
+            { 'metafields.progress-2': regex('Ready for Dispatch') },
+            { 'metafields.progress-3': regex('Ready for Dispatch') },
+            { 'metafields.progress-4': regex('Ready for Dispatch') }
           ]
         };
         break;
 
       case 'readyForPickup':
         query = {
-          fulfillment_status: { $ne: 'fulfilled' },
+          fulfillment_status: { $in: unfulfilled },
           $or: [
             { progress: { $in: [regex('Ready for Pickup')] } },
             { progress_1: regex('Ready for Pickup') },
@@ -139,20 +146,14 @@ router.get('/by-status', async (req, res) => {
 
       case 'onHold':
         query = {
-          $or: [
-            { custom_status: regex('On Hold') },
-            { 'metafields.order-custom-status': regex('On Hold') }
-          ],
+          custom_status: regex('On Hold'),
           fulfillment_status: { $ne: 'fulfilled' }
         };
         break;
 
       case 'needAttention':
         query = {
-          $or: [
-            { custom_status: regex('Need Attention') },
-            { 'metafields.order-custom-status': regex('Need Attention') }
-          ],
+          custom_status: regex('Need Attention'),
           fulfillment_status: { $ne: 'fulfilled' }
         };
         break;
