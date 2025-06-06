@@ -1,4 +1,3 @@
-// WidgetPage.tsx
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -76,7 +75,9 @@ const WidgetPage = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-semibold mb-4">📦 Orders: {labelMap[backendStatus]}</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        📦 Orders: {labelMap[backendStatus]} ({orders.length})
+      </h2>
       {orders.length === 0 ? (
         <p>No orders found for this status.</p>
       ) : (
