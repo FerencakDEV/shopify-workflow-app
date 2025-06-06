@@ -5,8 +5,8 @@ const Order = require('../models/Order');
 router.get('/by-assignee/:name', async (req, res) => {
   const assigneeName = req.params.name;
   const excludeFulfilled = { $nin: ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'] };
-  const regexAssigned = { $regex: /^assigned$/i };
-  const regexInProgress = { $regex: /^in progress$/i };
+
+  const regex = (val) => ({ $regex: new RegExp(`^${val}$`, 'i') });
 
   try {
     const orders = await Order.find({
@@ -18,14 +18,14 @@ router.get('/by-assignee/:name', async (req, res) => {
         { assignee_4: assigneeName }
       ],
       $or: [
-        { progress_1: regexAssigned },
-        { progress_2: regexAssigned },
-        { progress_3: regexAssigned },
-        { progress_4: regexAssigned },
-        { progress_1: regexInProgress },
-        { progress_2: regexInProgress },
-        { progress_3: regexInProgress },
-        { progress_4: regexInProgress }
+        { progress_1: regex('assigned') },
+        { progress_2: regex('assigned') },
+        { progress_3: regex('assigned') },
+        { progress_4: regex('assigned') },
+        { progress_1: regex('in progress') },
+        { progress_2: regex('in progress') },
+        { progress_3: regex('in progress') },
+        { progress_4: regex('in progress') }
       ]
     }).select('order_number custom_status fulfillment_status assignee_1 assignee_2 assignee_3 assignee_4');
 
