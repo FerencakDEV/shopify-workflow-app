@@ -14,6 +14,10 @@ interface OrderEntry {
   assignee_2?: string;
   assignee_3?: string;
   assignee_4?: string;
+  progress_1?: string;
+  progress_2?: string;
+  progress_3?: string;
+  progress_4?: string;
 }
 
 const assigneeOrder = ['Q1', 'Q2', 'Online', 'Thesis', 'Design', 'Design 2', 'MagicTouch', 'Posters'];
@@ -28,6 +32,7 @@ const WorkloadChart = () => {
       try {
         const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/orders/workload-chart');
         const json = await res.json();
+        console.log('Loaded workload data:', json.data);
         setWorkloadData(json.data);
       } catch (error) {
         console.error('Error fetching workload data:', error);
@@ -37,6 +42,7 @@ const WorkloadChart = () => {
   }, []);
 
   const toggleAssignee = async (assignee: string) => {
+    console.log('Clicked on assignee:', assignee);
     if (expandedAssignee === assignee) {
       setExpandedAssignee(null);
     } else {
@@ -44,6 +50,7 @@ const WorkloadChart = () => {
         try {
           const res = await fetch(`https://shopify-workflow-app-backend.onrender.com/api/orders/by-assignee/${assignee}`);
           const json = await res.json();
+          console.log(`Fetched orders for ${assignee}:`, json.data);
           setOrders(prev => ({ ...prev, [assignee]: json.data }));
         } catch (error) {
           console.error(`Error fetching orders for ${assignee}:`, error);
@@ -109,13 +116,20 @@ const WorkloadChart = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders[assignee]
-                        ?.filter(order =>
-                          [order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4].includes(assignee)
-                        )
-                        .map(order => (
-                          <tr key={order.order_number} className="border-b hover:bg-gray-100">
-                            <td className="py-1">{order.order_number}</td>
+                      {orders[assignee]?.map(order => {
+                        const allProgresses = [order.progress_1, order.progress_2, order.progress_3, order.progress_4];
+                        const isInProgress = allProgresses.includes('In Progress');
+                        const isAssigned = allProgresses.includes('Assigned');
+
+                        const rowClass = isInProgress
+                          ? 'bg-orange-100 text-orange-600'
+                          : isAssigned
+                          ? 'bg-gray-200 text-gray-700'
+                          : '';
+
+                        return (
+                          <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
+                            <td className="py-1 font-semibold">{order.order_number}</td>
                             <td>{order.custom_status}</td>
                             <td>{order.fulfillment_status}</td>
                             <td>
@@ -124,7 +138,8 @@ const WorkloadChart = () => {
                                 .join(', ')}
                             </td>
                           </tr>
-                        ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
