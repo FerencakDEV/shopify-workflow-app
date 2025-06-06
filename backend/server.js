@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const Order = require('./models/Order');
 
 
-const ordersByStatusRoutes = require('./routes/ordersByStatus');
+
 const dashboardRoutes = require('./routes/dashboard');
 const workloadChartRoutes = require('./routes/workloadChart');
 
@@ -42,7 +42,7 @@ app.get('/', (req, res) => {
 // ✅ API routes
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/dashboard', workloadChartRoutes);
-
+const ordersByStatusRoutes = require('./routes/ordersByStatus');
 app.use('/api/orders', ordersByStatusRoutes);
 
 

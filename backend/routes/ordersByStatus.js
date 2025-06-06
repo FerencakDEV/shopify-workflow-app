@@ -2,189 +2,75 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
-router.get('/:status', async (req, res) => {
+router.get('/by-status', async (req, res) => {
+  const status = req.query.status?.trim();
+
+  console.log('📥 Route /by-status hit');
+  console.log('📌 Query param status:', status);
+
+  if (!status) {
+    return res.status(400).json({ error: 'Missing status param' });
+  }
+
+  let query = {};
+  const regex = (value) => ({ $regex: new RegExp(`^${value}$`, 'i') });
+  const unfulfilled = ['unfulfilled', 'partially_fulfilled'];
+
   try {
-    const { status } = req.params;
-    console.log('📥 Received status from query:', status);
-    const unfulfilled = [null, '', 'unfulfilled'];
-
-    let query = {};
-
-    switch (status?.toLocaleLowerCase()) {
+    switch (status) {
       case 'newOrders':
         query = {
-          fulfillment_status: { $in: unfulfilled },
-          $and: [
-            {
-              $or: [
-                { progress: { $exists: false } },
-                { progress: '' },
-                { progress_1: '' },
-                { progress_1: { $exists: false } },
-                { $and: [
-                  { progress_1: '' },
-                  { progress_2: '' },
-                  { progress_3: '' },
-                  { progress_4: '' },
-                ] }
-              ]
-            }
+          custom_status: regex('New Order'),
+          fulfillment_status: { $ne: 'fulfilled' },
+          $or: [
+            { assignee: { $size: 0 } },
+            { assignee: { $exists: false } },
+            { assignee: null }
           ]
         };
         break;
 
       case 'urgentNewOrders':
         query = {
-          fulfillment_status: { $in: unfulfilled },
+          custom_status: regex('Urgent New Order'),
+          fulfillment_status: { $ne: 'fulfilled' },
           is_urgent: true,
-          $and: [
-            {
-              $or: [
-                { progress: { $exists: false } },
-                { progress: '' },
-                { progress_1: '' },
-                { progress_1: { $exists: false } },
-                { $and: [
-                  { progress_1: '' },
-                  { progress_2: '' },
-                  { progress_3: '' },
-                  { progress_4: '' },
-                ] }
-              ]
-            }
+          $or: [
+            { assignee: { $size: 0 } },
+            { assignee: { $not: { $elemMatch: { $ne: '' } } } },
+            { assignee: { $exists: false } },
+            { assignee: null }
           ]
         };
         break;
 
       case 'assignedOrders':
         query = {
+          custom_status: { $in: [regex('New Order'), regex('Urgent New Order')] },
           fulfillment_status: { $in: unfulfilled },
           $or: [
-            { progress: 'Assigned' },
-            { progress_1: 'Assigned' },
-            { progress_2: 'Assigned' },
-            { progress_3: 'Assigned' },
-            { progress_4: 'Assigned' },
+            { progress: { $in: [regex('Assigned')] } },
+            { progress_1: regex('Assigned') },
+            { progress_2: regex('Assigned') },
+            { progress_3: regex('Assigned') },
+            { progress_4: regex('Assigned') }
           ],
+          assignee: { $exists: true, $not: { $size: 0 } }
         };
         break;
 
-      case 'inProgress':
-        query = {
-          fulfillment_status: { $in: unfulfilled },
-          $or: [
-            { progress: 'In Progress' },
-            { progress_1: 'In Progress' },
-            { progress_2: 'In Progress' },
-            { progress_3: 'In Progress' },
-            { progress_4: 'In Progress' },
-          ],
-        };
-        break;
-
-      case 'printedDone':
-        query = {
-          fulfillment_status: { $in: unfulfilled },
-          $or: [
-            { progress: 'Printed-Done' },
-            { progress_1: 'Printed-Done' },
-            { progress_2: 'Printed-Done' },
-            { progress_3: 'Printed-Done' },
-            { progress_4: 'Printed-Done' },
-          ],
-        };
-        break;
-
-      case 'finishingBinding':
-        query = {
-          fulfillment_status: { $in: unfulfilled },
-          $or: [
-            { progress: 'Finishing & Binding' },
-            { progress_1: 'Finishing & Binding' },
-            { progress_2: 'Finishing & Binding' },
-            { progress_3: 'Finishing & Binding' },
-            { progress_4: 'Finishing & Binding' },
-          ],
-        };
-        break;
-
-      case 'toBeChecked':
-        query = {
-          fulfillment_status: { $in: unfulfilled },
-          $or: [
-            { progress: 'To Be Checked' },
-            { progress_1: 'To Be Checked' },
-            { progress_2: 'To Be Checked' },
-            { progress_3: 'To Be Checked' },
-            { progress_4: 'To Be Checked' },
-          ],
-        };
-        break;
-
-      case 'onHold':
-        query = {
-          fulfillment_status: { $in: unfulfilled },
-          $or: [
-            { progress: 'On Hold' },
-            { progress_1: 'On Hold' },
-            { progress_2: 'On Hold' },
-            { progress_3: 'On Hold' },
-            { progress_4: 'On Hold' },
-          ],
-        };
-        break;
-
-      case 'needAttention':
-        query = {
-          fulfillment_status: { $in: unfulfilled },
-          $or: [
-            { progress: 'Need Attention' },
-            { progress_1: 'Need Attention' },
-            { progress_2: 'Need Attention' },
-            { progress_3: 'Need Attention' },
-            { progress_4: 'Need Attention' },
-          ],
-        };
-        break;
-
-      case 'readyForDispatch':
-        query = {
-          fulfillment_status: { $in: unfulfilled },
-          $or: [
-            { progress: 'Ready for Dispatch' },
-            { progress_1: 'Ready for Dispatch' },
-            { progress_2: 'Ready for Dispatch' },
-            { progress_3: 'Ready for Dispatch' },
-            { progress_4: 'Ready for Dispatch' },
-          ],
-        };
-        break;
-
-      case 'readyForPickup':
-        query = {
-          fulfillment_status: { $in: unfulfilled },
-          $or: [
-            { progress: 'Ready for Pickup' },
-            { progress_1: 'Ready for Pickup' },
-            { progress_2: 'Ready for Pickup' },
-            { progress_3: 'Ready for Pickup' },
-            { progress_4: 'Ready for Pickup' },
-          ],
-        };
-        break;
-
-      case 'fulfilled':
-        query = { fulfillment_status: 'fulfilled' };
-        break;
+      // ... sem doplníš ostatné stavy neskôr
 
       default:
+        console.error('🚫 Invalid status param received:', status);
         return res.status(400).json({ error: 'Invalid status' });
     }
 
-    const orders = await Order.find(query).sort({ processed_at: -1 });
-    res.json(orders);
+    const orders = await Order.find(query).limit(50);
+    res.json({ count: orders.length, orders });
+
   } catch (err) {
-    console.error('❌ Error fetching orders by status:', err);
+    console.error('❌ Server error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
