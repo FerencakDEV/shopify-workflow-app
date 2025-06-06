@@ -16,15 +16,20 @@ router.get('/by-status', async (req, res) => {
 
   try {
     let query = {};
-
     const regex = (value) => ({ $regex: new RegExp(`^${value}$`, 'i') });
+    const unfulfilled = ['unfulfilled', 'partially_fulfilled'];
 
     switch (status) {
       case 'newOrders':
         query = {
-  custom_status: regex('New Order'),
-  fulfillment_status: { $ne: 'fulfilled' }
-};
+          custom_status: regex('New Order'),
+          fulfillment_status: { $ne: 'fulfilled' },
+          $or: [
+            { assignee: { $size: 0 } },
+            { assignee: { $exists: false } },
+            { assignee: null }
+          ]
+        };
         break;
 
       case 'urgentNewOrders':
@@ -44,13 +49,13 @@ router.get('/by-status', async (req, res) => {
       case 'assignedOrders':
         query = {
           custom_status: { $in: [regex('New Order'), regex('Urgent New Order')] },
-          fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
+          fulfillment_status: { $in: unfulfilled },
           $or: [
             { progress: { $in: [regex('Assigned')] } },
             { progress_1: regex('Assigned') },
             { progress_2: regex('Assigned') },
             { progress_3: regex('Assigned') },
-            { progress_4: regex('Assigned') },
+            { progress_4: regex('Assigned') }
           ],
           assignee: { $exists: true, $not: { $size: 0 } }
         };
@@ -59,13 +64,26 @@ router.get('/by-status', async (req, res) => {
       case 'inProgress':
         query = {
           custom_status: { $in: [regex('New Order'), regex('Urgent New Order'), regex('Hold Released')] },
-          fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
+          fulfillment_status: { $in: unfulfilled },
           $or: [
             { progress: { $in: [regex('In Progress')] } },
             { progress_1: regex('In Progress') },
             { progress_2: regex('In Progress') },
             { progress_3: regex('In Progress') },
-            { progress_4: regex('In Progress') },
+            { progress_4: regex('In Progress') }
+          ]
+        };
+        break;
+
+      case 'printedDone':
+        query = {
+          fulfillment_status: { $in: unfulfilled },
+          $or: [
+            { progress: { $in: [regex('Printed-Done')] } },
+            { progress_1: regex('Printed-Done') },
+            { progress_2: regex('Printed-Done') },
+            { progress_3: regex('Printed-Done') },
+            { progress_4: regex('Printed-Done') }
           ]
         };
         break;
@@ -79,20 +97,20 @@ router.get('/by-status', async (req, res) => {
             { progress_1: regex('Finishing & Binding') },
             { progress_2: regex('Finishing & Binding') },
             { progress_3: regex('Finishing & Binding') },
-            { progress_4: regex('Finishing & Binding') },
+            { progress_4: regex('Finishing & Binding') }
           ]
         };
         break;
 
       case 'toBeChecked':
         query = {
-          fulfillment_status: { $in: ['unfulfilled', 'partially_fulfilled'] },
+          fulfillment_status: { $in: unfulfilled },
           $or: [
             { progress: { $in: [regex('To be Checked')] } },
             { progress_1: regex('To be Checked') },
             { progress_2: regex('To be Checked') },
             { progress_3: regex('To be Checked') },
-            { progress_4: regex('To be Checked') },
+            { progress_4: regex('To be Checked') }
           ]
         };
         break;
@@ -105,7 +123,7 @@ router.get('/by-status', async (req, res) => {
             { progress_1: regex('Ready for Dispatch') },
             { progress_2: regex('Ready for Dispatch') },
             { progress_3: regex('Ready for Dispatch') },
-            { progress_4: regex('Ready for Dispatch') },
+            { progress_4: regex('Ready for Dispatch') }
           ]
         };
         break;
@@ -118,7 +136,7 @@ router.get('/by-status', async (req, res) => {
             { progress_1: regex('Ready for Pickup') },
             { progress_2: regex('Ready for Pickup') },
             { progress_3: regex('Ready for Pickup') },
-            { progress_4: regex('Ready for Pickup') },
+            { progress_4: regex('Ready for Pickup') }
           ]
         };
         break;
@@ -180,7 +198,7 @@ router.get('/by-status', async (req, res) => {
         fulfillment_status: sample.fulfillment_status,
         assignee: sample.assignee,
         progress: sample.progress,
-        metafields: sample.metafields,
+        metafields: sample.metafields
       });
     }
 

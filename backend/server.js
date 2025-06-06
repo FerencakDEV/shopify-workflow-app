@@ -4,7 +4,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Order = require('./models/Order');
 
-const orderRoutes = require('./routes/orders');
+
 const ordersByStatusRoutes = require('./routes/ordersByStatus');
 const dashboardRoutes = require('./routes/dashboard');
 const workloadChartRoutes = require('./routes/workloadChart');
@@ -42,7 +42,7 @@ app.get('/', (req, res) => {
 // ✅ API routes
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/dashboard', workloadChartRoutes);
-app.use('/api/orders', orderRoutes);
+
 app.use('/api/orders', ordersByStatusRoutes);
 
 
