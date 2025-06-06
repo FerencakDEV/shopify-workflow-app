@@ -14,64 +14,130 @@ router.get('/by-status', async (req, res) => {
 
   let query = {};
   const regex = (value) => ({ $regex: new RegExp(`^${value}$`, 'i') });
-  const unfulfilled = ['unfulfilled', 'partially_fulfilled'];
+  const blank = { $in: [null, '', /^ *$/] };
 
   try {
     switch (status) {
       case 'newOrders':
-  const blank = { $in: [null, '', /^ *$/] };
-
-  query = {
-    order_status: regex('New Order'),
-    is_urgent: { $ne: true },
-    fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
-    $and: [
-      // No progress
-      { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
-      { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
-      { $or: [{ progress_3: { $exists: false } }, { progress_3: blank }] },
-      { $or: [{ progress_4: { $exists: false } }, { progress_4: blank }] },
-
-      // No assignee
-      { $or: [{ assignee_1: { $exists: false } }, { assignee_1: blank }] },
-      { $or: [{ assignee_2: { $exists: false } }, { assignee_2: blank }] },
-      { $or: [{ assignee_3: { $exists: false } }, { assignee_3: blank }] },
-      { $or: [{ assignee_4: { $exists: false } }, { assignee_4: blank }] }
-    ]
-  };
-  break;
-
+        query = {
+          order_status: regex('New Order'),
+          is_urgent: { $ne: true },
+          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          $and: [
+            { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
+            { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
+            { $or: [{ progress_3: { $exists: false } }, { progress_3: blank }] },
+            { $or: [{ progress_4: { $exists: false } }, { progress_4: blank }] },
+            { $or: [{ assignee_1: { $exists: false } }, { assignee_1: blank }] },
+            { $or: [{ assignee_2: { $exists: false } }, { assignee_2: blank }] },
+            { $or: [{ assignee_3: { $exists: false } }, { assignee_3: blank }] },
+            { $or: [{ assignee_4: { $exists: false } }, { assignee_4: blank }] }
+          ]
+        };
+        break;
 
       case 'urgentNewOrders':
         query = {
-          custom_status: regex('Urgent New Order'),
-          fulfillment_status: { $ne: 'fulfilled' },
           is_urgent: true,
-          $or: [
-            { assignee: { $size: 0 } },
-            { assignee: { $not: { $elemMatch: { $ne: '' } } } },
-            { assignee: { $exists: false } },
-            { assignee: null }
+          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          $and: [
+            { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
+            { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
+            { $or: [{ progress_3: { $exists: false } }, { progress_3: blank }] },
+            { $or: [{ progress_4: { $exists: false } }, { progress_4: blank }] }
           ]
         };
         break;
 
       case 'assignedOrders':
         query = {
-          custom_status: { $in: [regex('New Order'), regex('Urgent New Order')] },
-          fulfillment_status: { $in: unfulfilled },
+          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
           $or: [
-            { progress: { $in: [regex('Assigned')] } },
-            { progress_1: regex('Assigned') },
-            { progress_2: regex('Assigned') },
-            { progress_3: regex('Assigned') },
-            { progress_4: regex('Assigned') }
-          ],
-          assignee: { $exists: true, $not: { $size: 0 } }
+            { progress_1: regex('assigned') },
+            { progress_2: regex('assigned') },
+            { progress_3: regex('assigned') },
+            { progress_4: regex('assigned') }
+          ]
         };
         break;
 
-      // ... sem doplníš ostatné stavy neskôr
+      case 'inProgress':
+        query = {
+          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          $or: [
+            { progress_1: regex('in progress') },
+            { progress_2: regex('in progress') },
+            { progress_3: regex('in progress') },
+            { progress_4: regex('in progress') }
+          ]
+        };
+        break;
+
+      case 'printedDone':
+        query = {
+          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          $or: [
+            { progress_1: regex('printed-done') },
+            { progress_2: regex('printed-done') },
+            { progress_3: regex('printed-done') },
+            { progress_4: regex('printed-done') }
+          ]
+        };
+        break;
+
+      case 'finishingBinding':
+        query = {
+          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          $or: [
+            { progress_1: regex('finishing & binding') },
+            { progress_2: regex('finishing & binding') },
+            { progress_3: regex('finishing & binding') },
+            { progress_4: regex('finishing & binding') }
+          ]
+        };
+        break;
+
+      case 'toBeChecked':
+        query = {
+          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          $or: [
+            { progress_1: regex('to be checked') },
+            { progress_2: regex('to be checked') },
+            { progress_3: regex('to be checked') },
+            { progress_4: regex('to be checked') }
+          ]
+        };
+        break;
+
+      case 'readyForDispatch':
+        query = {
+          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          $or: [
+            { progress_1: regex('ready for dispatch') },
+            { progress_2: regex('ready for dispatch') },
+            { progress_3: regex('ready for dispatch') },
+            { progress_4: regex('ready for dispatch') }
+          ]
+        };
+        break;
+
+      case 'readyForPickup':
+        query = {
+          $or: [
+            { fulfillment_status: regex('ready for pickup') },
+            { order_status: regex('ready for pickup') }
+          ]
+        };
+        break;
+
+      case 'onHold':
+        query = {
+          $or: [
+            { fulfillment_status: regex('on hold') },
+            { order_status: regex('on hold') }
+          ]
+        };
+        break;
 
       default:
         console.error('🚫 Invalid status param received:', status);
