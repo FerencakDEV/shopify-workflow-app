@@ -116,31 +116,33 @@ const WorkloadChart = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders[assignee]?.map(order => {
-                        const allProgresses = [order.progress_1, order.progress_2, order.progress_3, order.progress_4];
-                        const isInProgress = allProgresses.includes('In Progress');
-                        const isAssigned = allProgresses.includes('Assigned');
+  {orders[assignee]?.map(order => {
+    const progressList = [order.progress_1, order.progress_2, order.progress_3, order.progress_4]
+      .map(p => (p || '').trim().toLowerCase());
 
-                        const rowClass = isInProgress
-                          ? 'bg-orange-100 text-orange-600'
-                          : isAssigned
-                          ? 'bg-gray-200 text-gray-700'
-                          : '';
+    const isInProgress = progressList.includes('in progress');
+    const isAssigned = progressList.includes('assigned');
 
-                        return (
-                          <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
-                            <td className="py-1 font-semibold">{order.order_number}</td>
-                            <td>{order.custom_status}</td>
-                            <td>{order.fulfillment_status}</td>
-                            <td>
-                              {[order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4]
-                                .filter(Boolean)
-                                .join(', ')}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
+    const rowClass = isInProgress
+      ? 'bg-orange-100 text-orange-600'
+      : isAssigned
+      ? 'bg-gray-200 text-gray-700'
+      : '';
+
+    return (
+      <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
+        <td className="py-1">{order.order_number}</td>
+        <td>{order.custom_status}</td>
+        <td>{order.fulfillment_status}</td>
+        <td>
+          {[order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4]
+            .filter(Boolean)
+            .join(', ')}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
                   </table>
                 </div>
               )}
