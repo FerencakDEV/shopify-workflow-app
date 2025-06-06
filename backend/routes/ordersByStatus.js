@@ -39,6 +39,14 @@ router.get('/by-status', async (req, res) => {
           { $or: [{ assignee_3: { $exists: false } }, { assignee_3: "" }] },
           { $or: [{ assignee_4: { $exists: false } }, { assignee_4: "" }] }
         ]
+      },
+      {
+        $and: [
+          { $or: [{ progress_1: { $exists: false } }, { progress_1: "" }] },
+          { $or: [{ progress_2: { $exists: false } }, { progress_2: "" }] },
+          { $or: [{ progress_3: { $exists: false } }, { progress_3: "" }] },
+          { $or: [{ progress_4: { $exists: false } }, { progress_4: "" }] }
+        ]
       }
     ]
   };
