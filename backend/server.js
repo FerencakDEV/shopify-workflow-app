@@ -7,7 +7,7 @@ const Order = require('./models/Order');
 
 
 const dashboardRoutes = require('./routes/dashboard');
-const workloadChartRoutes = require('./routes/workloadChart');
+const workloadChartRoute = require('./routes/workloadChart');
 
 const { cleanOrder } = require('./controllers/cleanOrder');
 
@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 
 // ✅ API routes
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/dashboard', workloadChartRoutes);
+app.use('/api/orders', workloadChartRoute);
 const ordersByStatusRoutes = require('./routes/ordersByStatus');
 app.use('/api/orders', ordersByStatusRoutes);
 
