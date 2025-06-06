@@ -5,11 +5,12 @@ const Order = require('../models/Order');
 router.get('/:status', async (req, res) => {
   try {
     const { status } = req.params;
+    console.log('📥 Received status from query:', status);
     const unfulfilled = [null, '', 'unfulfilled'];
 
     let query = {};
 
-    switch (status) {
+    switch (status?.toLocaleLowerCase()) {
       case 'newOrders':
         query = {
           fulfillment_status: { $in: unfulfilled },
