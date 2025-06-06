@@ -1,3 +1,7 @@
+const express = require('express');
+const router = express.Router();
+const Order = require('../models/Order');
+
 router.get('/by-assignee/:name', async (req, res) => {
   const assigneeName = req.params.name;
   const excludeFulfilled = { $nin: ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'] };
@@ -30,3 +34,5 @@ router.get('/by-assignee/:name', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+module.exports = router;
