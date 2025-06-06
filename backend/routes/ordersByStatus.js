@@ -80,7 +80,7 @@ router.get('/by-status', async (req, res) => {
         return res.status(400).json({ error: 'Invalid status' });
     }
 
-    const orders = await Order.find(query).limit(50);
+    const orders = await Order.find(query);
     res.json({ count: orders.length, orders });
 
   } catch (err) {
