@@ -19,26 +19,19 @@ router.get('/by-status', async (req, res) => {
   try {
     switch (status) {
       case 'newOrders':
+  const blank = { $in: [null, '', /^ *$/] };
+
   query = {
-    order_status: regex('New Order'),
-    fulfillment_status: { $ne: 'fulfilled' },
+    $or: [
+      { custom_status: regex('New Order') },
+      { order_status: regex('New Order') }
+    ],
+    fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
     $and: [
-      {
-        $or: [
-          { assignee_1: { $exists: false } }, { assignee_1: '' },
-          { assignee_2: { $exists: false } }, { assignee_2: '' },
-          { assignee_3: { $exists: false } }, { assignee_3: '' },
-          { assignee_4: { $exists: false } }, { assignee_4: '' }
-        ]
-      },
-      {
-        $or: [
-          { progress_1: { $exists: false } }, { progress_1: '' },
-          { progress_2: { $exists: false } }, { progress_2: '' },
-          { progress_3: { $exists: false } }, { progress_3: '' },
-          { progress_4: { $exists: false } }, { progress_4: '' }
-        ]
-      }
+      { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
+      { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
+      { $or: [{ progress_3: { $exists: false } }, { progress_3: blank }] },
+      { $or: [{ progress_4: { $exists: false } }, { progress_4: blank }] }
     ]
   };
   break;
