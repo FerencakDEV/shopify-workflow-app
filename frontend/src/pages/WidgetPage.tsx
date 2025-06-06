@@ -1,3 +1,4 @@
+// WidgetPage.tsx
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -42,9 +43,7 @@ const WidgetPage = () => {
     const fetchOrders = async () => {
       try {
         const res = await fetch(
-          `https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${encodeURIComponent(
-            backendStatus
-          )}`
+          `https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${encodeURIComponent(backendStatus)}`
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -97,26 +96,8 @@ const WidgetPage = () => {
                 <tr key={order._id} className="border-t">
                   <td className="px-3 py-2">{order.order_number}</td>
                   <td className="px-3 py-2">{order.custom_status || '—'}</td>
-                  <td className="px-3 py-2">
-                    {[
-                      order.progress_1,
-                      order.progress_2,
-                      order.progress_3,
-                      order.progress_4
-                    ]
-                      .filter(Boolean)
-                      .join(', ') || '—'}
-                  </td>
-                  <td className="px-3 py-2">
-                    {[
-                      order.assignee_1,
-                      order.assignee_2,
-                      order.assignee_3,
-                      order.assignee_4
-                    ]
-                      .filter(Boolean)
-                      .join(', ') || '—'}
-                  </td>
+                  <td className="px-3 py-2">{(order.progress || []).filter(Boolean).join(', ') || '—'}</td>
+                  <td className="px-3 py-2">{(order.assignee || []).filter(Boolean).join(', ') || '—'}</td>
                   <td className="px-3 py-2">{order.fulfillment_status || '—'}</td>
                 </tr>
               ))}
