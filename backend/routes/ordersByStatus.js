@@ -15,7 +15,7 @@ router.get('/by-status', async (req, res) => {
   let query = {};
   const regex = (value) => ({ $regex: new RegExp(`^${value}$`, 'i') });
   const blank = { $in: [null, '', /^ *$/] };
-  const excludeFulfilled = { $nin: ['fulfilled', 'cancelled'] };
+  fulfillment_status: { $nin: ['fulfilled', 'cancelled', 'ready for pickup', 'on hold'] }
 
   try {
     switch (status) {
