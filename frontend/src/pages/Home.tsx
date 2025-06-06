@@ -84,15 +84,15 @@ const Home = () => {
           <div className="bg-white rounded-xl shadow p-4 h-full">
             <div className="grid grid-rows-5 grid-cols-2 gap-4">
               {statusWidgets.map((widget) => (
-                <StatusWidget
-                  key={widget.key}
-                  count={counts?.[widget.key as keyof Counts] ?? 0}
-                  label={widget.label}
-                  sublabel={widget.sub}
-                  color={widget.color}
-                  onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
-                />
-              ))}
+  <StatusWidget
+    key={widget.key}
+    statusKey={widget.key} // 🔁 Posielame status kľúč namiesto `count`
+    label={widget.label}
+    sublabel={widget.sub}
+    color={widget.color}
+    onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
+  />
+))}
             </div>
           </div>
         </div>
