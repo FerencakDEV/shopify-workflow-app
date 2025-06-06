@@ -15,6 +15,7 @@ router.get('/by-status', async (req, res) => {
   let query = {};
   const regex = (value) => ({ $regex: new RegExp(`^${value}$`, 'i') });
   const blank = { $in: [null, '', /^ *$/] };
+  const excludeFulfilled = { $nin: ['fulfilled', 'cancelled'] };
 
   try {
     switch (status) {
@@ -22,7 +23,7 @@ router.get('/by-status', async (req, res) => {
         query = {
           order_status: regex('New Order'),
           is_urgent: { $ne: true },
-          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          fulfillment_status: excludeFulfilled,
           $and: [
             { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
             { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
@@ -39,7 +40,7 @@ router.get('/by-status', async (req, res) => {
       case 'urgentNewOrders':
         query = {
           is_urgent: true,
-          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          fulfillment_status: excludeFulfilled,
           $and: [
             { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
             { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
@@ -51,7 +52,7 @@ router.get('/by-status', async (req, res) => {
 
       case 'assignedOrders':
         query = {
-          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          fulfillment_status: excludeFulfilled,
           $or: [
             { progress_1: regex('assigned') },
             { progress_2: regex('assigned') },
@@ -63,7 +64,7 @@ router.get('/by-status', async (req, res) => {
 
       case 'inProgress':
         query = {
-          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          fulfillment_status: excludeFulfilled,
           $or: [
             { progress_1: regex('in progress') },
             { progress_2: regex('in progress') },
@@ -75,7 +76,7 @@ router.get('/by-status', async (req, res) => {
 
       case 'printedDone':
         query = {
-          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          fulfillment_status: excludeFulfilled,
           $or: [
             { progress_1: regex('printed-done') },
             { progress_2: regex('printed-done') },
@@ -87,7 +88,7 @@ router.get('/by-status', async (req, res) => {
 
       case 'finishingBinding':
         query = {
-          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          fulfillment_status: excludeFulfilled,
           $or: [
             { progress_1: regex('finishing & binding') },
             { progress_2: regex('finishing & binding') },
@@ -99,7 +100,7 @@ router.get('/by-status', async (req, res) => {
 
       case 'toBeChecked':
         query = {
-          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          fulfillment_status: excludeFulfilled,
           $or: [
             { progress_1: regex('to be checked') },
             { progress_2: regex('to be checked') },
@@ -111,7 +112,7 @@ router.get('/by-status', async (req, res) => {
 
       case 'readyForDispatch':
         query = {
-          fulfillment_status: { $nin: ['fulfilled', 'cancelled'] },
+          fulfillment_status: excludeFulfilled,
           $or: [
             { progress_1: regex('ready for dispatch') },
             { progress_2: regex('ready for dispatch') },
