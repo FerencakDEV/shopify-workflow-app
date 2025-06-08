@@ -108,36 +108,38 @@ const WorkloadChart = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders[assignee]
-                        ?.sort((a, b) => {
-                          const aHasInProgress = a.progress?.some(p => String(p).toLowerCase() === 'in progress') ?? false;
-                          const bHasInProgress = b.progress?.some(p => String(p).toLowerCase() === 'in progress') ?? false;
-                          return (bHasInProgress ? 1 : 0) - (aHasInProgress ? 1 : 0);
-                        })
-                        .map(order => {
-                          const assigneeList = order.assignees ?? [];
-                          const progressList = order.progress ?? [];
+  {[...(orders[assignee] || [])]
+    .sort((a, b) => {
+      const aProgress = a.progress || [];
+      const bProgress = b.progress || [];
+      const aHasInProgress = aProgress.some((p: string) => p.toLowerCase() === 'in progress');
+      const bHasInProgress = bProgress.some((p: string) => p.toLowerCase() === 'in progress');
+      return Number(bHasInProgress) - Number(aHasInProgress);
+    })
+    .map(order => {
+      const progressList = order.progress || [];
+      const assigneeList = order.assignees || [];
 
-                          const isInProgress = progressList.some(p => String(p).toLowerCase() === 'in progress');
-                          const isAssigned = progressList.some(p => String(p).toLowerCase() === 'assigned');
+      const isInProgress = progressList.some((p: string) => p.toLowerCase() === 'in progress');
+      const isAssigned = progressList.some((p: string) => p.toLowerCase() === 'assigned');
 
-                          const rowClass = isInProgress
-                            ? 'bg-orange-100 text-orange-600'
-                            : isAssigned
-                            ? 'bg-gray-200 text-gray-700'
-                            : '';
+      const rowClass = isInProgress
+        ? 'bg-orange-100 text-orange-600'
+        : isAssigned
+        ? 'bg-gray-200 text-gray-700'
+        : '';
 
-                          return (
-                            <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
-                              <td className="py-1">{order.order_number}</td>
-                              <td>{order.custom_status}</td>
-                              <td>{order.fulfillment_status}</td>
-                              <td>{assigneeList.join(', ')}</td>
-                              <td>{progressList.join(', ')}</td>
-                            </tr>
-                          );
-                        })}
-                    </tbody>
+      return (
+        <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
+          <td className="py-1">{order.order_number}</td>
+          <td>{order.custom_status}</td>
+          <td>{order.fulfillment_status}</td>
+          <td>{assigneeList.join(', ')}</td>
+          <td>{progressList.join(', ')}</td>
+        </tr>
+      );
+    })}
+</tbody>
                   </table>
                 </div>
               )}
