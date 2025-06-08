@@ -127,21 +127,23 @@ router.get('/status-counts', async (req, res) => {
       }
 
       // To Be Checked (viacnásobné výskyty v jednom orderi)
-      if (
-  status !== 'fulfilled' &&
-  progresses.some(p => p.includes('to be checked'))
-) {
-  const toBeCheckedCount = progresses.filter(p => p.includes('to be checked')).length;
-  counts.toBeChecked += toBeCheckedCount;
-  toBeCheckedOrders.push({
-    order_number,
-    id,
-    progresses,
-    assignees,
-    toBeCheckedCount
-  });
-  continue;
-}
+      if (status !== 'fulfilled') {
+        const toBeCheckedCount = progresses.filter(p => p === 'to be checked').length;
+
+        if (toBeCheckedCount > 0) {
+          counts.toBeChecked += toBeCheckedCount;
+
+          toBeCheckedOrders.push({
+            order_number: order.order_number,
+            id: order.id,
+            progresses,
+            assignees,
+            toBeCheckedCount
+          });
+
+          console.log(`✅ Order ${order.order_number} added ${toBeCheckedCount}x to toBeChecked`);
+        }
+      }
 
       // Ready for Dispatch
       if (
