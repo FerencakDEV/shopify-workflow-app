@@ -20,27 +20,22 @@ router.get('/by-status', async (req, res) => {
   try {
     switch (status) {
       case 'newOrders':
-        query = {
-          $or: [
-            { order_status: regex('New Order') },
-            { custom_status: regex('New Order') },
-            { 'metafields.order-custom-status': regex('New Order') }
-          ],
-          custom_status: { $nin: [null, ''] },
-          is_urgent: { $in: [false, "false"], $exists: true },
-          fulfillment_status: excludeFulfilled,
-          $and: [
-            { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
-            { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
-            { $or: [{ progress_3: { $exists: false } }, { progress_3: blank }] },
-            { $or: [{ progress_4: { $exists: false } }, { progress_4: blank }] },
-            { $or: [{ assignee_1: { $exists: false } }, { assignee_1: blank }] },
-            { $or: [{ assignee_2: { $exists: false } }, { assignee_2: blank }] },
-            { $or: [{ assignee_3: { $exists: false } }, { assignee_3: blank }] },
-            { $or: [{ assignee_4: { $exists: false } }, { assignee_4: blank }] }
-          ]
-        };
-        break;
+  query = {
+    custom_status: 'New Order',
+    is_urgent: { $in: [false, "false"], $exists: true },
+    fulfillment_status: excludeFulfilled,
+    $and: [
+      { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
+      { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
+      { $or: [{ progress_3: { $exists: false } }, { progress_3: blank }] },
+      { $or: [{ progress_4: { $exists: false } }, { progress_4: blank }] },
+      { $or: [{ assignee_1: { $exists: false } }, { assignee_1: blank }] },
+      { $or: [{ assignee_2: { $exists: false } }, { assignee_2: blank }] },
+      { $or: [{ assignee_3: { $exists: false } }, { assignee_3: blank }] },
+      { $or: [{ assignee_4: { $exists: false } }, { assignee_4: blank }] }
+    ]
+  };
+  break;
 
       case 'urgentNewOrders':
         query = {
