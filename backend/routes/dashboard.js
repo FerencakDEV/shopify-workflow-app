@@ -117,16 +117,17 @@ if (
           progresses.some(p => regexMatch('finishing & binding').test(p))) {
         counts.finishingBinding++;
       }
-
-     // To Be Checked
+// To Be Checked
 if (
   status?.toLowerCase() !== 'fulfilled' &&
-  progresses.some(p => /to be checked/i.test(p || ''))
+  (progress_1?.toLowerCase().includes('to be checked') ||
+   progress_2?.toLowerCase().includes('to be checked') ||
+   progress_3?.toLowerCase().includes('to be checked') ||
+   progress_4?.toLowerCase().includes('to be checked'))
 ) {
   counts.toBeChecked++;
   continue;
 }
-
 
       // Ready for Dispatch
       if (status === 'unfulfilled' &&
