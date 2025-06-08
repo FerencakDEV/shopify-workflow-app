@@ -117,14 +117,16 @@ if (
           progresses.some(p => regexMatch('finishing & binding').test(p))) {
         counts.finishingBinding++;
       }
-// To Be Checked – count each individual "to be checked"
+// To Be Checked – count each individual "to be checked" and log it
 if (status !== 'fulfilled') {
-  const toBeCheckedCount = [order.progress_1, order.progress_2, order.progress_3, order.progress_4]
+  const toBeCheckedProgresses = [order.progress_1, order.progress_2, order.progress_3, order.progress_4];
+  const toBeCheckedCount = toBeCheckedProgresses
     .filter(p => (p || '').toLowerCase().trim() === 'to be checked')
     .length;
 
   if (toBeCheckedCount > 0) {
     counts.toBeChecked += toBeCheckedCount;
+    console.log(`✅ Order ${order.id} contributed ${toBeCheckedCount}x toBeChecked`);
   }
 }
 
