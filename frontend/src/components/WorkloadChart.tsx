@@ -110,7 +110,7 @@ const WorkloadChart = () => {
                         <th>Status</th>
                         <th>Fulfillment</th>
                         <th>Assignees</th>
-                        <th>Progress</th> {/* nový stĺpec */}
+                        <th>Progress</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -122,8 +122,8 @@ const WorkloadChart = () => {
                           order.progress_4,
                         ].map(p => (p || '').trim()).filter(Boolean);
 
-                        const isInProgress = progressList.some(p => p.toLowerCase() === 'in progress');
-                        const isAssigned = progressList.some(p => p.toLowerCase() === 'assigned');
+                        const isInProgress = progressList.some(p => String(p).toLowerCase() === 'in progress');
+                        const isAssigned = progressList.some(p => String(p).toLowerCase() === 'assigned');
 
                         const rowClass = isInProgress
                           ? 'bg-orange-100 text-orange-600'
