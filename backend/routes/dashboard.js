@@ -117,8 +117,8 @@ if (customStatus === 'on hold' && status !== 'fulfilled') {
 
      // To Be Checked
 if (
-  !excludeFulfilled.includes(status) &&
-  progresses.some(p => regexMatch('to be checked').test(p || ''))
+  status?.toLowerCase() !== 'fulfilled' &&
+  progresses.some(p => /to be checked/i.test(p || ''))
 ) {
   counts.toBeChecked++;
   continue;
