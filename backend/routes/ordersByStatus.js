@@ -43,17 +43,26 @@ router.get('/by-status', async (req, res) => {
 
 
       case 'urgentNewOrders':
-        query = {
-          is_urgent: true,
-          fulfillment_status: excludeFulfilled,
-          $and: [
-            { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
-            { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
-            { $or: [{ progress_3: { $exists: false } }, { progress_3: blank }] },
-            { $or: [{ progress_4: { $exists: false } }, { progress_4: blank }] }
-          ]
-        };
-        break;
+     
+ query = {
+  $or: [
+    { custom_status: regex('New Order') },
+    { 'metafields.order-custom-status': regex('New Order') }
+  ],
+  is_urgent: true,
+  fulfillment_status: excludeFulfilled,
+  $and: [
+    { progress_1: { $in: blank } },
+    { progress_2: { $in: blank } },
+    { progress_3: { $in: blank } },
+    { progress_4: { $in: blank } },
+    { assignee_1: { $in: blank } },
+    { assignee_2: { $in: blank } },
+    { assignee_3: { $in: blank } },
+    { assignee_4: { $in: blank } }
+  ]
+};
+  break;
 
       case 'assignedOrders':
         query = {
