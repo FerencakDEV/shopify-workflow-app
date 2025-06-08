@@ -34,7 +34,7 @@ router.get('/status-counts', async (req, res) => {
       allOrders: orders.length
     };
 
-    const toBeCheckedOrders = [];
+   
 
     const blank = [null, '', undefined];
     const excludeFulfilled = ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'];
@@ -151,7 +151,7 @@ if (status !== 'fulfilled') {
       }
     }
 
-    res.json({ counts, toBeCheckedOrders });
+    res.json( counts);
   } catch (err) {
     console.error('Dashboard fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch dashboard counts' });
