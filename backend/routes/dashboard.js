@@ -62,11 +62,11 @@ router.get('/status-counts', async (req, res) => {
       // Exclude fulfilled and cancelled
       if (excludeFulfilled.includes(status)) continue;
 
-      // On Hold
-      if (customStatus === 'on hold') {
-        counts.onHold++;
-        continue;
-      }
+   // On Hold
+if (customStatus === 'on hold' && status !== 'fulfilled') {
+  counts.onHold++;
+  continue;
+}
 
       // Ready for Pickup
       if ([order.progress_1, order.progress_2, order.progress_3, order.progress_4]
@@ -115,11 +115,15 @@ router.get('/status-counts', async (req, res) => {
         counts.finishingBinding++;
       }
 
-      // To Be Checked
-      if (!excludeFulfilled.includes(status) &&
-          progresses.some(p => regexMatch('to be checked').test(p))) {
-        counts.toBeChecked++;
-      }
+     // To Be Checked
+if (
+  !excludeFulfilled.includes(status) &&
+  progresses.some(p => regexMatch('to be checked').test(p || ''))
+) {
+  counts.toBeChecked++;
+  continue;
+}
+
 
       // Ready for Dispatch
       if (status === 'unfulfilled' &&
@@ -128,19 +132,26 @@ router.get('/status-counts', async (req, res) => {
       }
 
       // Need Attention
-      const mismatched = [1, 2, 3, 4].some(i => {
-        const assignee = order[`assignee_${i}`];
-        const progress = order[`progress_${i}`];
+const empty = [null, '', undefined];
+const needAttentionMatch = [1, 2, 3, 4].some(i => {
+  const a = order[`assignee_${i}`];
+  const p = order[`progress_${i}`];
 
-        const hasAssignee = !blank.includes(assignee);
-        const hasProgress = !blank.includes(progress);
+  return (
+    (
+      !empty.includes(a) &&
+      (empty.includes(p) || typeof p === 'undefined')
+    ) || (
+      !empty.includes(p) &&
+      (empty.includes(a) || typeof a === 'undefined')
+    )
+  );
+});
 
-        return (hasAssignee && !hasProgress) || (!hasAssignee && hasProgress);
-      });
-
-      if (mismatched && status !== 'fulfilled') {
-        counts.needAttention++;
-      }
+if (needAttentionMatch && status !== 'fulfilled') {
+  counts.needAttention++;
+  continue;
+}
     }
 
     res.json(counts);
