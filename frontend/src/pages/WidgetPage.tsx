@@ -54,7 +54,12 @@ const WidgetPage = () => {
           return;
         }
 
-        setOrders(data.orders);
+        setOrders(
+  data.orders.sort((a: any, b: any) => {
+    const numA = Number(a.order_number || 0);
+    const numB = Number(b.order_number || 0);
+    return numA - numB;
+  }));
       } catch (err) {
         console.error('❌ Error loading orders:', err);
         setError('Failed to load orders.');
