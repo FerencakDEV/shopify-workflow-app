@@ -159,7 +159,7 @@ if (needAttentionMatch && status !== 'fulfilled') {
 }
     }
 
-    res.json(counts);
+    res.json(counts, toBeCheckedOrders);
   } catch (err) {
     console.error('Dashboard fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch dashboard counts' });
