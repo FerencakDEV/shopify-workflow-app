@@ -115,16 +115,13 @@ router.get('/status-counts', async (req, res) => {
         progresses.some(p => regexMatch('finishing & binding').test(p))) {
         counts.finishingBinding++;
       }
-// To Be Checked (each instance counts)
+// To Be Checked (each instance counts)F
 if (status !== 'fulfilled') {
   const toBeCheckedCount = progresses.filter(p => p === 'to be checked').length;
 
   if (toBeCheckedCount > 0) {
     counts.toBeChecked += toBeCheckedCount;
-    toBeCheckedOrders.push({
-      id: order.id,
-      count: toBeCheckedCount
-    });
+   
   }
 }
 
@@ -151,7 +148,7 @@ if (status !== 'fulfilled') {
       }
     }
 
-    res.json( counts);
+    res.json({ counts});
   } catch (err) {
     console.error('Dashboard fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch dashboard counts' });
