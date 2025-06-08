@@ -14,7 +14,7 @@ router.get('/by-status', async (req, res) => {
 
   let query = {};
   const regex = (value) => ({ $regex: new RegExp(`^${value}$`, 'i') });
-  const blank = ['', null];
+ 
   const excludeFulfilled = { $nin: ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'] };
 
   try {
@@ -23,21 +23,20 @@ router.get('/by-status', async (req, res) => {
   const blank = ['', null];
  query = {
   $or: [
-    { order_status: regex('New Order') },
     { custom_status: regex('New Order') },
     { 'metafields.order-custom-status': regex('New Order') }
   ],
-  $or: [{ is_urgent: false }, { is_urgent: { $exists: false } }],
+  is_urgent: false,
   fulfillment_status: excludeFulfilled,
   $and: [
-    { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
-    { $or: [{ progress_2: { $exists: false } }, { progress_2: blank }] },
-    { $or: [{ progress_3: { $exists: false } }, { progress_3: blank }] },
-    { $or: [{ progress_4: { $exists: false } }, { progress_4: blank }] },
-    { $or: [{ assignee_1: { $exists: false } }, { assignee_1: blank }] },
-    { $or: [{ assignee_2: { $exists: false } }, { assignee_2: blank }] },
-    { $or: [{ assignee_3: { $exists: false } }, { assignee_3: blank }] },
-    { $or: [{ assignee_4: { $exists: false } }, { assignee_4: blank }] }
+    { progress_1: { $in: blank } },
+    { progress_2: { $in: blank } },
+    { progress_3: { $in: blank } },
+    { progress_4: { $in: blank } },
+    { assignee_1: { $in: blank } },
+    { assignee_2: { $in: blank } },
+    { assignee_3: { $in: blank } },
+    { assignee_4: { $in: blank } }
   ]
 };
   break;
