@@ -119,11 +119,8 @@ if (
       }
 // To Be Checked
 if (
-  status?.toLowerCase() !== 'fulfilled' &&
-  (progress_1?.toLowerCase().includes('to be checked') ||
-   progress_2?.toLowerCase().includes('to be checked') ||
-   progress_3?.toLowerCase().includes('to be checked') ||
-   progress_4?.toLowerCase().includes('to be checked'))
+  status !== 'fulfilled' &&
+  progresses.some(p => p.includes('to be checked'))
 ) {
   counts.toBeChecked++;
   continue;
