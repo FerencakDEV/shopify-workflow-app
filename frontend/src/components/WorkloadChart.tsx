@@ -32,7 +32,6 @@ const WorkloadChart = () => {
       try {
         const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/orders/workload-chart');
         const json = await res.json();
-        console.log('Loaded workload data:', json.data);
         setWorkloadData(json.data);
       } catch (error) {
         console.error('Error fetching workload data:', error);
@@ -42,7 +41,6 @@ const WorkloadChart = () => {
   }, []);
 
   const toggleAssignee = async (assignee: string) => {
-    console.log('Clicked on assignee:', assignee);
     if (expandedAssignee === assignee) {
       setExpandedAssignee(null);
     } else {
@@ -50,7 +48,6 @@ const WorkloadChart = () => {
         try {
           const res = await fetch(`https://shopify-workflow-app-backend.onrender.com/api/orders/by-assignee/${assignee}`);
           const json = await res.json();
-          console.log(`Fetched orders for ${assignee}:`, json.data);
           setOrders(prev => ({ ...prev, [assignee]: json.data }));
         } catch (error) {
           console.error(`Error fetching orders for ${assignee}:`, error);
@@ -113,36 +110,44 @@ const WorkloadChart = () => {
                         <th>Status</th>
                         <th>Fulfillment</th>
                         <th>Assignees</th>
+                        <th>Progress</th> {/* nový stĺpec */}
                       </tr>
                     </thead>
                     <tbody>
-  {orders[assignee]?.map(order => {
-    const progressList = [order.progress_1, order.progress_2, order.progress_3, order.progress_4]
-      .map(p => (p || '').trim().toLowerCase());
+                      {orders[assignee]?.map(order => {
+                        const progressList = [
+                          order.progress_1,
+                          order.progress_2,
+                          order.progress_3,
+                          order.progress_4,
+                        ].map(p => (p || '').trim()).filter(Boolean);
 
-    const isInProgress = progressList.includes('in progress');
-    const isAssigned = progressList.includes('assigned');
+                        const isInProgress = progressList.some(p => p.toLowerCase() === 'in progress');
+                        const isAssigned = progressList.some(p => p.toLowerCase() === 'assigned');
 
-    const rowClass = isInProgress
-      ? 'bg-orange-100 text-orange-600'
-      : isAssigned
-      ? 'bg-gray-200 text-gray-700'
-      : '';
+                        const rowClass = isInProgress
+                          ? 'bg-orange-100 text-orange-600'
+                          : isAssigned
+                          ? 'bg-gray-200 text-gray-700'
+                          : '';
 
-    return (
-      <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
-        <td className="py-1">{order.order_number}</td>
-        <td>{order.custom_status}</td>
-        <td>{order.fulfillment_status}</td>
-        <td>
-          {[order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4]
-            .filter(Boolean)
-            .join(', ')}
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
+                        return (
+                          <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
+                            <td className="py-1">{order.order_number}</td>
+                            <td>{order.custom_status}</td>
+                            <td>{order.fulfillment_status}</td>
+                            <td>
+                              {[order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4]
+                                .filter(Boolean)
+                                .join(', ')}
+                            </td>
+                            <td>
+                              {progressList.join(', ')}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
                   </table>
                 </div>
               )}
