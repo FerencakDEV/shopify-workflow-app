@@ -8,7 +8,8 @@ router.get('/by-assignee/:name', async (req, res) => {
   const regex = (val) => ({ $regex: new RegExp(`^${val}$`, 'i') });
 
   try {
-    const orders = await Order.find({
+    // Nájde len objednávky pre daného assignee + správne custom_status + nefulfillnuté + správny progress
+    const allOrders = await Order.find({
       custom_status: { $in: ['New Order', 'Urgent New Order', 'Hold Released'] },
       fulfillment_status: excludeFulfilled,
       $or: [
@@ -27,25 +28,45 @@ router.get('/by-assignee/:name', async (req, res) => {
         { assignee_3: assigneeName },
         { assignee_4: assigneeName }
       ]
-    }).select('order_number custom_status fulfillment_status assignee_1 assignee_2 assignee_3 assignee_4 progress_1 progress_2 progress_3 progress_4');
+    }).select(
+      'order_number custom_status fulfillment_status assignee_1 assignee_2 assignee_3 assignee_4 progress_1 progress_2 progress_3 progress_4'
+    );
 
-    const result = orders.map(order => ({
-      ...order.toObject(),
-      assignees: [
-        order.assignee_1,
-        order.assignee_2,
-        order.assignee_3,
-        order.assignee_4,
-      ].filter(Boolean),
-      progress: [
+    // Rozdelenie na dve skupiny: najprv "in progress", potom "assigned"
+    const inProgress = [];
+    const assigned = [];
+
+    for (const order of allOrders) {
+      const progresses = [
         order.progress_1,
         order.progress_2,
         order.progress_3,
         order.progress_4,
-      ].filter(Boolean),
-    }));
+      ]
+        .map(p => (p || '').toLowerCase())
+        .filter(Boolean);
 
-    res.json({ count: result.length, data: result });
+      const entry = {
+        ...order.toObject(),
+        assignees: [
+          order.assignee_1,
+          order.assignee_2,
+          order.assignee_3,
+          order.assignee_4,
+        ].filter(Boolean),
+        progress: progresses,
+      };
+
+      if (progresses.includes('in progress')) {
+        inProgress.push(entry);
+      } else if (progresses.includes('assigned')) {
+        assigned.push(entry);
+      }
+    }
+
+    const sorted = [...inProgress, ...assigned];
+
+    res.json({ count: sorted.length, data: sorted });
   } catch (err) {
     console.error('❌ Error fetching orders by assignee:', err);
     res.status(500).json({ error: 'Server error' });
