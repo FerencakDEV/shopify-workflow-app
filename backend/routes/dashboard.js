@@ -34,7 +34,8 @@ router.get('/status-counts', async (req, res) => {
     };
 
     const blank = [null, '', undefined];
-    const regex = (value) => new RegExp(`^${value}$`, 'i');
+    const excludeFulfilled = ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'];
+    const regexMatch = (value) => new RegExp(`^${value}$`, 'i');
 
     for (const order of orders) {
       const status = (order.fulfillment_status || '').toLowerCase();
@@ -46,20 +47,20 @@ router.get('/status-counts', async (req, res) => {
         order.progress_2,
         order.progress_3,
         order.progress_4
-      ].map(p => (p || '').trim().toLowerCase()).filter(Boolean);
+      ].map(p => (p || '').trim().toLowerCase());
 
       const assignees = [
         order.assignee_1,
         order.assignee_2,
         order.assignee_3,
         order.assignee_4
-      ].map(a => (a || '').trim()).filter(Boolean);
+      ].map(a => (a || '').trim());
 
-      const noProgress = progresses.length === 0;
-      const noAssignee = assignees.length === 0;
+      const noProgress = progresses.every(p => blank.includes(p));
+      const noAssignee = assignees.every(a => blank.includes(a));
 
       // Exclude fulfilled and cancelled
-      if (["fulfilled", "cancelled"].includes(status)) continue;
+      if (excludeFulfilled.includes(status)) continue;
 
       // On Hold
       if (customStatus === 'on hold') {
@@ -68,7 +69,8 @@ router.get('/status-counts', async (req, res) => {
       }
 
       // Ready for Pickup
-      if (progresses.includes('ready for pickup')) {
+      if ([order.progress_1, order.progress_2, order.progress_3, order.progress_4]
+          .some(p => regexMatch('ready for pickup').test(p || ''))) {
         counts.readyForPickup++;
         continue;
       }
@@ -85,37 +87,60 @@ router.get('/status-counts', async (req, res) => {
         continue;
       }
 
-      // Assigned
-      if (progresses.includes('assigned')) counts.assignedOrders++;
+      // Assigned Orders
+      if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
+          !excludeFulfilled.includes(status) &&
+          progresses.some(p => regexMatch('assigned').test(p))) {
+        counts.assignedOrders++;
+      }
 
       // In Progress
-      if (progresses.includes('in progress')) counts.inProgress++;
+      if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
+          !excludeFulfilled.includes(status) &&
+          progresses.some(p => regexMatch('in progress').test(p))) {
+        counts.inProgress++;
+      }
 
       // Printed Done
-      if (progresses.includes('printed-done')) counts.printedDone++;
+      if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
+          !excludeFulfilled.includes(status) &&
+          progresses.some(p => regexMatch('printed-done').test(p))) {
+        counts.printedDone++;
+      }
 
       // Finishing & Binding
-      if (progresses.includes('finishing & binding')) counts.finishingBinding++;
+      if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
+          !excludeFulfilled.includes(status) &&
+          progresses.some(p => regexMatch('finishing & binding').test(p))) {
+        counts.finishingBinding++;
+      }
 
       // To Be Checked
-      if (progresses.includes('to be checked')) counts.toBeChecked++;
+      if (!excludeFulfilled.includes(status) &&
+          progresses.some(p => regexMatch('to be checked').test(p))) {
+        counts.toBeChecked++;
+      }
 
       // Ready for Dispatch
-      if (progresses.includes('ready for dispatch')) counts.readyForDispatch++;
+      if (status === 'unfulfilled' &&
+          progresses.some(p => regexMatch('ready for dispatch').test(p))) {
+        counts.readyForDispatch++;
+      }
 
-      // Need Attention Logic
-      const empty = [null, '', undefined];
+      // Need Attention
       const mismatched = [1, 2, 3, 4].some(i => {
         const assignee = order[`assignee_${i}`];
         const progress = order[`progress_${i}`];
 
-        const hasAssignee = !empty.includes(assignee);
-        const hasProgress = !empty.includes(progress);
+        const hasAssignee = !blank.includes(assignee);
+        const hasProgress = !blank.includes(progress);
 
         return (hasAssignee && !hasProgress) || (!hasAssignee && hasProgress);
       });
 
-      if (mismatched) counts.needAttention++;
+      if (mismatched && status !== 'fulfilled') {
+        counts.needAttention++;
+      }
     }
 
     res.json(counts);
