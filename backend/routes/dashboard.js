@@ -6,7 +6,7 @@ router.get('/status-counts', async (req, res) => {
   try {
     const orders = await Order.find({}, {
       fulfillment_status: 1,
-      order_status: 1,
+      custom_status: 1,
       is_urgent: 1,
       assignee_1: 1,
       assignee_2: 1,
@@ -33,20 +33,13 @@ router.get('/status-counts', async (req, res) => {
       allOrders: orders.length
     };
 
-    const knownProgresses = [
-      'assigned',
-      'in progress',
-      'printed-done',
-      'finishing & binding',
-      'to be checked',
-      'ready for dispatch',
-      'ready for pickup'
-    ];
+    const blank = [null, '', undefined];
+    const regex = (value) => new RegExp(`^${value}$`, 'i');
 
     for (const order of orders) {
       const status = (order.fulfillment_status || '').toLowerCase();
-      const orderStatus = (order.order_status || '').toLowerCase();
-      const isUrgent = order.is_urgent === true;
+      const customStatus = (order.custom_status || '').toLowerCase();
+      const isUrgent = order.is_urgent === true || order.is_urgent === 'true';
 
       const progresses = [
         order.progress_1,
@@ -65,66 +58,64 @@ router.get('/status-counts', async (req, res) => {
       const noProgress = progresses.length === 0;
       const noAssignee = assignees.length === 0;
 
-      // Filter out completed orders
-      if (['fulfilled', 'cancelled'].includes(status)) continue;
+      // Exclude fulfilled and cancelled
+      if (["fulfilled", "cancelled"].includes(status)) continue;
 
-      if (status === 'on hold' || orderStatus === 'on hold') {
+      // On Hold
+      if (customStatus === 'on hold') {
         counts.onHold++;
         continue;
       }
 
-      if (status === 'ready for pickup' || orderStatus === 'ready for pickup') {
+      // Ready for Pickup
+      if (progresses.includes('ready for pickup')) {
         counts.readyForPickup++;
         continue;
       }
 
-      // Strict new/urgent check (must have no assignee and no progress)
-      if ((orderStatus === 'urgent new order' || isUrgent) && noProgress && noAssignee) {
+      // Urgent New Order
+      if (['new order', 'hold released'].includes(customStatus) && isUrgent && noProgress && noAssignee) {
         counts.urgentNewOrders++;
         continue;
       }
 
-      if (orderStatus === 'new order' && !isUrgent && noProgress && noAssignee) {
+      // New Order
+      if (['new order', 'hold released'].includes(customStatus) && !isUrgent && noProgress && noAssignee) {
         counts.newOrders++;
         continue;
       }
 
-      // Widget counts by progress
-      const used = new Set();
+      // Assigned
+      if (progresses.includes('assigned')) counts.assignedOrders++;
 
-      for (const progress of progresses) {
-        if (used.has(progress)) continue;
-        used.add(progress);
+      // In Progress
+      if (progresses.includes('in progress')) counts.inProgress++;
 
-        switch (progress) {
-          case 'assigned':
-            counts.assignedOrders++;
-            break;
-          case 'in progress':
-            counts.inProgress++;
-            break;
-          case 'printed-done':
-            counts.printedDone++;
-            break;
-          case 'finishing & binding':
-            counts.finishingBinding++;
-            break;
-          case 'to be checked':
-            counts.toBeChecked++;
-            break;
-          case 'ready for dispatch':
-            counts.readyForDispatch++;
-            break;
-        }
-      }
+      // Printed Done
+      if (progresses.includes('printed-done')) counts.printedDone++;
 
-      // If inconsistent number of assignees/progress OR unknown progress, add to need attention
-      const hasUnknown = progresses.some(p => !knownProgresses.includes(p));
-      const partial = progresses.length !== assignees.length;
+      // Finishing & Binding
+      if (progresses.includes('finishing & binding')) counts.finishingBinding++;
 
-      if (!['on hold', 'ready for pickup'].includes(orderStatus) && (hasUnknown || partial)) {
-        counts.needAttention++;
-      }
+      // To Be Checked
+      if (progresses.includes('to be checked')) counts.toBeChecked++;
+
+      // Ready for Dispatch
+      if (progresses.includes('ready for dispatch')) counts.readyForDispatch++;
+
+      // Need Attention Logic
+      const empty = [null, '', undefined];
+      const mismatched = [1, 2, 3, 4].some(i => {
+        const assignee = order[`assignee_${i}`];
+        const progress = order[`progress_${i}`];
+
+        const hasAssignee = !empty.includes(assignee);
+        const hasProgress = !empty.includes(progress);
+
+        return (hasAssignee && !hasProgress) || (!hasAssignee && hasProgress);
+      });
+
+      if (mismatched) counts.needAttention++;
     }
 
     res.json(counts);

@@ -153,58 +153,29 @@ router.get('/by-status', async (req, res) => {
   break;
 
         case 'needAttention':
+  const empty = [null, '', undefined];
   query = {
     fulfillment_status: { $ne: 'fulfilled' },
-    $or: [
+    $or: [1, 2, 3, 4].flatMap((i) => ([
       {
         $and: [
-          { assignee_1: { $nin: [null, '', undefined] } },
-          { $or: [{ progress_1: { $in: [null, '', undefined] } }, { progress_1: { $exists: false } }] }
+          { [`assignee_${i}`]: { $nin: empty } },
+          { $or: [
+              { [`progress_${i}`]: { $in: empty } },
+              { [`progress_${i}`]: { $exists: false } }
+          ]}
         ]
       },
       {
         $and: [
-          { progress_1: { $nin: [null, '', undefined] } },
-          { $or: [{ assignee_1: { $in: [null, '', undefined] } }, { assignee_1: { $exists: false } }] }
-        ]
-      },
-      {
-        $and: [
-          { assignee_2: { $nin: [null, '', undefined] } },
-          { $or: [{ progress_2: { $in: [null, '', undefined] } }, { progress_2: { $exists: false } }] }
-        ]
-      },
-      {
-        $and: [
-          { progress_2: { $nin: [null, '', undefined] } },
-          { $or: [{ assignee_2: { $in: [null, '', undefined] } }, { assignee_2: { $exists: false } }] }
-        ]
-      },
-      {
-        $and: [
-          { assignee_3: { $nin: [null, '', undefined] } },
-          { $or: [{ progress_3: { $in: [null, '', undefined] } }, { progress_3: { $exists: false } }] }
-        ]
-      },
-      {
-        $and: [
-          { progress_3: { $nin: [null, '', undefined] } },
-          { $or: [{ assignee_3: { $in: [null, '', undefined] } }, { assignee_3: { $exists: false } }] }
-        ]
-      },
-      {
-        $and: [
-          { assignee_4: { $nin: [null, '', undefined] } },
-          { $or: [{ progress_4: { $in: [null, '', undefined] } }, { progress_4: { $exists: false } }] }
-        ]
-      },
-      {
-        $and: [
-          { progress_4: { $nin: [null, '', undefined] } },
-          { $or: [{ assignee_4: { $in: [null, '', undefined] } }, { assignee_4: { $exists: false } }] }
+          { [`progress_${i}`]: { $nin: empty } },
+          { $or: [
+              { [`assignee_${i}`]: { $in: empty } },
+              { [`assignee_${i}`]: { $exists: false } }
+          ]}
         ]
       }
-    ]
+    ]))
   };
   break;
 
