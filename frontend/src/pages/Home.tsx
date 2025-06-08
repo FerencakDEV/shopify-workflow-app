@@ -42,8 +42,9 @@ const Home = () => {
       try {
         const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/dashboard/status-counts');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const data: Counts = await res.json();
-        setCounts(data);
+        
+        const resData: { counts: Counts } = await res.json();
+        setCounts(resData.counts); // ← správne získanie počtov
         setError(null);
       } catch (err: any) {
         setError(err.message || 'Failed to load data');
@@ -52,10 +53,9 @@ const Home = () => {
       }
     };
 
-    fetchCounts(); // initial fetch
-    const interval = setInterval(fetchCounts, 10000); // update every 10 seconds
-
-    return () => clearInterval(interval); // cleanup
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) return <div className="p-6 text-sm">Loading dashboard...</div>;
@@ -95,7 +95,7 @@ const Home = () => {
                   label={widget.label}
                   sublabel={widget.sub}
                   color={widget.color}
-                  count={counts ? counts[widget.key as keyof Counts] : 0}
+                  count={counts?.[widget.key as keyof Counts] ?? 0}
                   onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
                 />
               ))}
