@@ -1,52 +1,44 @@
-// routes/workload-chart.js
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
-router.get('/workload-chart', async (req, res) => {
+router.get('/by-assignee/:name', async (req, res) => {
+  const assigneeName = req.params.name;
+  const excludeFulfilled = { $nin: ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'] };
+  const regex = (val) => new RegExp(`^${val}$`, 'i');
+
   try {
-    const orders = await Order.find({
+    const allOrders = await Order.find({
       custom_status: { $in: ['New Order', 'Urgent New Order', 'Hold Released'] },
-      fulfillment_status: { $nin: ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'] },
+      fulfillment_status: excludeFulfilled,
     }).select(
-      'order_number assignee_1 assignee_2 assignee_3 assignee_4 progress_1 progress_2 progress_3 progress_4'
+      'order_number custom_status fulfillment_status assignee_1 assignee_2 assignee_3 assignee_4 progress_1 progress_2 progress_3 progress_4'
     );
 
-    const countsMap = new Map();
+    const result = [];
+    const validStatuses = ['assigned', 'in progress'];
 
-    orders.forEach(order => {
-      const assignees = [order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4];
-      const progresses = [order.progress_1, order.progress_2, order.progress_3, order.progress_4];
+    allOrders.forEach(order => {
+      for (let i = 1; i <= 4; i++) {
+        const assignee = (order[`assignee_${i}`] || '').trim();
+        const progress = (order[`progress_${i}`] || '').trim().toLowerCase();
 
-      const seen = new Set(); // To avoid double-counting same assignee in one order
+        if (!assignee || assignee !== assigneeName) continue;
+        if (!validStatuses.includes(progress)) continue;
 
-      for (let i = 0; i < 4; i++) {
-        const name = (assignees[i] || '').trim();
-        const prog = (progresses[i] || '').trim().toLowerCase();
-        if (!name) continue;
-        if (!['assigned', 'in progress'].includes(prog)) continue;
-
-        const key = name;
-        if (!countsMap.has(key)) {
-          countsMap.set(key, { assignee: name, assigned: 0, inProgress: 0 });
-        }
-
-        const current = countsMap.get(key);
-
-        // Avoid duplicate count of the same order for same assignee
-        const orderKey = `${order.order_number}-${key}`;
-        if (seen.has(orderKey)) continue;
-        seen.add(orderKey);
-
-        if (prog === 'assigned') current.assigned++;
-        if (prog === 'in progress') current.inProgress++;
+        result.push({
+          order_number: order.order_number,
+          custom_status: order.custom_status,
+          fulfillment_status: order.fulfillment_status,
+          assignee,
+          progress: progress.charAt(0).toUpperCase() + progress.slice(1)
+        });
       }
     });
 
-    const data = Array.from(countsMap.values());
-    res.json({ data });
+    res.json({ count: result.length, data: result });
   } catch (err) {
-    console.error('Error generating workload chart:', err);
+    console.error('❌ Error fetching orders by assignee:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
