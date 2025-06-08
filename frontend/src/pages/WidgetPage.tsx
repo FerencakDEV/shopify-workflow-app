@@ -55,11 +55,14 @@ const WidgetPage = () => {
         }
 
         setOrders(
-  data.orders.sort((a: any, b: any) => {
-  const numA = parseInt(a.order_number) || 0;
-  const numB = parseInt(b.order_number) || 0;
-  return numA - numB;
-}));
+  data.orders
+    .filter((o: any) => typeof o.order_number !== 'undefined')
+    .sort((a: any, b: any) => {
+      const numA = typeof a.order_number === 'number' ? a.order_number : parseInt(a.order_number);
+      const numB = typeof b.order_number === 'number' ? b.order_number : parseInt(b.order_number);
+      return numA - numB;
+    })
+);
       } catch (err) {
         console.error('❌ Error loading orders:', err);
         setError('Failed to load orders.');
