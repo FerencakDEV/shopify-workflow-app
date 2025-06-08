@@ -10,14 +10,8 @@ interface OrderEntry {
   order_number: number;
   custom_status: string;
   fulfillment_status: string;
-  assignee_1?: string;
-  assignee_2?: string;
-  assignee_3?: string;
-  assignee_4?: string;
-  progress_1?: string;
-  progress_2?: string;
-  progress_3?: string;
-  progress_4?: string;
+  assignees?: string[];
+  progress?: string[];
 }
 
 const assigneeOrder = ['Q1', 'Q2', 'Online', 'Thesis', 'Design', 'Design 2', 'MagicTouch', 'Posters'];
@@ -114,39 +108,35 @@ const WorkloadChart = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders[assignee]?.map(order => {
-                        const progressList = [
-                          order.progress_1,
-                          order.progress_2,
-                          order.progress_3,
-                          order.progress_4,
-                        ].map(p => (p || '').trim()).filter(Boolean);
+                      {orders[assignee]
+                        ?.sort((a, b) => {
+                          const aHasInProgress = a.progress?.some(p => String(p).toLowerCase() === 'in progress') ?? false;
+                          const bHasInProgress = b.progress?.some(p => String(p).toLowerCase() === 'in progress') ?? false;
+                          return (bHasInProgress ? 1 : 0) - (aHasInProgress ? 1 : 0);
+                        })
+                        .map(order => {
+                          const assigneeList = order.assignees ?? [];
+                          const progressList = order.progress ?? [];
 
-                        const isInProgress = progressList.some(p => String(p).toLowerCase() === 'in progress');
-                        const isAssigned = progressList.some(p => String(p).toLowerCase() === 'assigned');
+                          const isInProgress = progressList.some(p => String(p).toLowerCase() === 'in progress');
+                          const isAssigned = progressList.some(p => String(p).toLowerCase() === 'assigned');
 
-                        const rowClass = isInProgress
-                          ? 'bg-orange-100 text-orange-600'
-                          : isAssigned
-                          ? 'bg-gray-200 text-gray-700'
-                          : '';
+                          const rowClass = isInProgress
+                            ? 'bg-orange-100 text-orange-600'
+                            : isAssigned
+                            ? 'bg-gray-200 text-gray-700'
+                            : '';
 
-                        return (
-                          <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
-                            <td className="py-1">{order.order_number}</td>
-                            <td>{order.custom_status}</td>
-                            <td>{order.fulfillment_status}</td>
-                            <td>
-                              {[order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4]
-                                .filter(Boolean)
-                                .join(', ')}
-                            </td>
-                            <td>
-                              {progressList.join(', ')}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                          return (
+                            <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
+                              <td className="py-1">{order.order_number}</td>
+                              <td>{order.custom_status}</td>
+                              <td>{order.fulfillment_status}</td>
+                              <td>{assigneeList.join(', ')}</td>
+                              <td>{progressList.join(', ')}</td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
