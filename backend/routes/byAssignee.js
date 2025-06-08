@@ -3,7 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 
 router.get('/by-assignee/:name', async (req, res) => {
-  const assigneeName = req.params.name.toLowerCase();
+  const assigneeName = req.params.name;
   const excludeFulfilled = { $nin: ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'] };
   const regex = (val) => ({ $regex: new RegExp(`^${val}$`, 'i') });
 
@@ -31,43 +31,38 @@ router.get('/by-assignee/:name', async (req, res) => {
       'order_number custom_status fulfillment_status assignee_1 assignee_2 assignee_3 assignee_4 progress_1 progress_2 progress_3 progress_4'
     );
 
-    const inProgress = [];
-    const assigned = [];
-    const seenOrders = new Set();
+    const orderMap = new Map();
 
     for (const order of allOrders) {
-      let matchedProgress = null;
+      let included = false;
 
       for (let i = 1; i <= 4; i++) {
-        const assignee = (order[`assignee_${i}`] || '').toLowerCase();
+        const assignee = order[`assignee_${i}`];
         const progress = (order[`progress_${i}`] || '').toLowerCase();
 
-        if (assignee === assigneeName && (progress === 'assigned' || progress === 'in progress')) {
-          matchedProgress = progress;
-          break;
+        if (
+          assignee &&
+          assignee.toLowerCase() === assigneeName.toLowerCase() &&
+          (progress === 'assigned' || progress === 'in progress')
+        ) {
+          included = true;
+          break; // ak raz nájdeme zhodu, stačí
         }
       }
 
-      if (!seenOrders.has(order.order_number) && matchedProgress) {
-        const entry = {
+      if (included) {
+        orderMap.set(order.order_number, {
           order_number: order.order_number,
           custom_status: order.custom_status,
           fulfillment_status: order.fulfillment_status,
           assignees: [order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4].filter(Boolean),
-          progress: [order.progress_1, order.progress_2, order.progress_3, order.progress_4].filter(Boolean)
-        };
-
-        seenOrders.add(order.order_number);
-
-        if (matchedProgress === 'in progress') {
-          inProgress.push(entry);
-        } else {
-          assigned.push(entry);
-        }
+          progress: [order.progress_1, order.progress_2, order.progress_3, order.progress_4].filter(Boolean),
+        });
       }
     }
 
-    const results = [...inProgress, ...assigned];
+    const results = Array.from(orderMap.values());
+
     res.json({ count: results.length, data: results });
   } catch (err) {
     console.error('❌ Error fetching orders by assignee:', err);
