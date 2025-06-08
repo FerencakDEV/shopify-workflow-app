@@ -26,7 +26,7 @@ router.get('/by-status', async (req, res) => {
             { custom_status: regex('New Order') },
             { 'metafields.order-custom-status': regex('New Order') }
           ],
-          is_urgent: { $in: [false, "false"] },
+          is_urgent: { $in: [false, "false"], $exists: true },
           fulfillment_status: excludeFulfilled,
           $and: [
             { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
