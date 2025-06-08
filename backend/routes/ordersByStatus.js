@@ -140,13 +140,10 @@ router.get('/by-status', async (req, res) => {
         break;
 
       case 'onHold':
-        query = {
-          $or: [
-            { fulfillment_status: regex('on hold') },
-            { order_status: regex('on hold') }
-          ]
-        };
-        break;
+  query = {
+    custom_status: 'On Hold'
+  };
+  break;
 
         case 'needAttention':
   query = {
