@@ -117,11 +117,14 @@ if (
           progresses.some(p => regexMatch('finishing & binding').test(p))) {
         counts.finishingBinding++;
       }
-// To Be Checked – každé "to be checked" zvlášť
+// To Be Checked – count each individual "to be checked"
 if (status !== 'fulfilled') {
-  const matches = progresses.filter(p => p.includes('to be checked'));
-  if (matches.length > 0) {
-    counts.toBeChecked += matches.length;
+  const toBeCheckedCount = [order.progress_1, order.progress_2, order.progress_3, order.progress_4]
+    .filter(p => (p || '').toLowerCase().trim() === 'to be checked')
+    .length;
+
+  if (toBeCheckedCount > 0) {
+    counts.toBeChecked += toBeCheckedCount;
   }
 }
 
