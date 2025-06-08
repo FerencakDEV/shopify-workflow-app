@@ -44,13 +44,18 @@ const Home = () => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data: Counts = await res.json();
         setCounts(data);
+        setError(null);
       } catch (err: any) {
         setError(err.message || 'Failed to load data');
       } finally {
         setLoading(false);
       }
     };
-    fetchCounts();
+
+    fetchCounts(); // initial fetch
+    const interval = setInterval(fetchCounts, 10000); // update every 10 seconds
+
+    return () => clearInterval(interval); // cleanup
   }, []);
 
   if (loading) return <div className="p-6 text-sm">Loading dashboard...</div>;
@@ -84,15 +89,16 @@ const Home = () => {
           <div className="bg-white rounded-xl shadow p-4 h-full">
             <div className="grid grid-rows-5 grid-cols-2 gap-4">
               {statusWidgets.map((widget) => (
-  <StatusWidget
-    key={widget.key}
-    statusKey={widget.key} // 🔁 Posielame status kľúč namiesto `count`
-    label={widget.label}
-    sublabel={widget.sub}
-    color={widget.color}
-    onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
-  />
-))}
+                <StatusWidget
+                  key={widget.key}
+                  statusKey={widget.key}
+                  label={widget.label}
+                  sublabel={widget.sub}
+                  color={widget.color}
+                  count={counts ? counts[widget.key as keyof Counts] : 0}
+                  onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
+                />
+              ))}
             </div>
           </div>
         </div>

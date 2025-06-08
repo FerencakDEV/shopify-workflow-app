@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 export interface StatusWidgetProps {
   statusKey: string; // e.g., "newOrders"
   label: string;
   sublabel: string;
   color: string;
+  count: number; // ← počet sa teraz posiela zvonku
   onClick?: () => void;
 }
 
@@ -13,25 +14,9 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
   label,
   sublabel,
   color,
+  count,
   onClick,
 }) => {
-  const [count, setCount] = useState<number>(0);
-
-  useEffect(() => {
-    const fetchCount = async () => {
-      try {
-        const res = await fetch(`https://shopify-workflow-app-backend.onrender.com/api/orders/by-status?status=${encodeURIComponent(statusKey)}`);
-        const data = await res.json();
-        setCount(Array.isArray(data.orders) ? data.orders.length : 0);
-      } catch (err) {
-        console.warn(`⚠️ Failed to fetch count for ${statusKey}`, err);
-        setCount(0);
-      }
-    };
-
-    fetchCount();
-  }, [statusKey]);
-
   return (
     <div
       onClick={onClick}
