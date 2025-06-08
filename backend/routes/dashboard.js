@@ -115,20 +115,18 @@ router.get('/status-counts', async (req, res) => {
         progresses.some(p => regexMatch('finishing & binding').test(p))) {
         counts.finishingBinding++;
       }
+// To Be Checked (each instance counts)
+if (status !== 'fulfilled') {
+  const toBeCheckedCount = progresses.filter(p => p === 'to be checked').length;
 
-      // To Be Checked (each instance counts)
-      if (status !== 'fulfilled') {
-        const toBeCheckedCount = progresses.filter(p => p === 'to be checked').length;
-
-        if (toBeCheckedCount > 0) {
-          counts.toBeChecked += toBeCheckedCount;
-          toBeCheckedOrders.push({
-            id: order.id,
-            count: toBeCheckedCount
-          });
-          console.log(`✅ Order ${order.id} contributed ${toBeCheckedCount}x toBeChecked`);
-        }
-      }
+  if (toBeCheckedCount > 0) {
+    counts.toBeChecked += toBeCheckedCount;
+    toBeCheckedOrders.push({
+      id: order.id,
+      count: toBeCheckedCount
+    });
+  }
+}
 
       // Ready for Dispatch
       if (status === 'unfulfilled' &&
