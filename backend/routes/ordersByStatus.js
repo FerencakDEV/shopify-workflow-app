@@ -41,7 +41,7 @@ router.get('/by-status', async (req, res) => {
   ]
 };
 
-
+  break;
       case 'urgentNewOrders':
      
  query = {
