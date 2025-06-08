@@ -47,17 +47,20 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
   );
 };
 
-// Funkcia pre určenie správnej farby textu podľa svetlosti pozadia
 function getTextColor(bgColor: string): string {
   try {
-    const hex = bgColor.replace('#', '').slice(0, 6);
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
+    const hex = bgColor.trim().replace('#', '');
+
+    // HEX farba musí mať 6 znakov
+    if (hex.length !== 6) return '#1a1a1a';
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
 
     return brightness > 160 ? '#1a1a1a' : '#ffffff';
   } catch {
-    return '#000000';
+    return '#1a1a1a';
   }
 }
