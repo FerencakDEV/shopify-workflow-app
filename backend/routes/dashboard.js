@@ -117,11 +117,12 @@ if (
           progresses.some(p => regexMatch('finishing & binding').test(p))) {
         counts.finishingBinding++;
       }
-// To Be Checked – započítaj každé "to be checked" samostatne
+// To Be Checked – každé "to be checked" zvlášť
 if (status !== 'fulfilled') {
   const matches = progresses.filter(p => p.includes('to be checked'));
-  counts.toBeChecked += matches.length;
-  if (matches.length > 0) continue;
+  if (matches.length > 0) {
+    counts.toBeChecked += matches.length;
+  }
 }
 
       // Ready for Dispatch
