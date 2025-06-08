@@ -1,74 +1,52 @@
+// routes/workload-chart.js
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
-router.get('/by-assignee/:name', async (req, res) => {
-  const assigneeName = req.params.name;
-  const excludeFulfilled = { $nin: ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'] };
-  const regex = (val) => ({ $regex: new RegExp(`^${val}$`, 'i') });
-
+router.get('/workload-chart', async (req, res) => {
   try {
-    // Nájde len objednávky pre daného assignee + správne custom_status + nefulfillnuté + správny progress
-    const allOrders = await Order.find({
+    const orders = await Order.find({
       custom_status: { $in: ['New Order', 'Urgent New Order', 'Hold Released'] },
-      fulfillment_status: excludeFulfilled,
-      $or: [
-        { progress_1: regex('assigned') },
-        { progress_2: regex('assigned') },
-        { progress_3: regex('assigned') },
-        { progress_4: regex('assigned') },
-        { progress_1: regex('in progress') },
-        { progress_2: regex('in progress') },
-        { progress_3: regex('in progress') },
-        { progress_4: regex('in progress') }
-      ],
-      $or: [
-        { assignee_1: assigneeName },
-        { assignee_2: assigneeName },
-        { assignee_3: assigneeName },
-        { assignee_4: assigneeName }
-      ]
+      fulfillment_status: { $nin: ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'] },
     }).select(
-      'order_number custom_status fulfillment_status assignee_1 assignee_2 assignee_3 assignee_4 progress_1 progress_2 progress_3 progress_4'
+      'order_number assignee_1 assignee_2 assignee_3 assignee_4 progress_1 progress_2 progress_3 progress_4'
     );
 
-    // Rozdelenie na dve skupiny: najprv "in progress", potom "assigned"
-    const inProgress = [];
-    const assigned = [];
+    const countsMap = new Map();
 
-    for (const order of allOrders) {
-      const progresses = [
-        order.progress_1,
-        order.progress_2,
-        order.progress_3,
-        order.progress_4,
-      ]
-        .map(p => (p || '').toLowerCase())
-        .filter(Boolean);
+    orders.forEach(order => {
+      const assignees = [order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4];
+      const progresses = [order.progress_1, order.progress_2, order.progress_3, order.progress_4];
 
-      const entry = {
-        ...order.toObject(),
-        assignees: [
-          order.assignee_1,
-          order.assignee_2,
-          order.assignee_3,
-          order.assignee_4,
-        ].filter(Boolean),
-        progress: progresses,
-      };
+      const seen = new Set(); // To avoid double-counting same assignee in one order
 
-      if (progresses.includes('in progress')) {
-        inProgress.push(entry);
-      } else if (progresses.includes('assigned')) {
-        assigned.push(entry);
+      for (let i = 0; i < 4; i++) {
+        const name = (assignees[i] || '').trim();
+        const prog = (progresses[i] || '').trim().toLowerCase();
+        if (!name) continue;
+        if (!['assigned', 'in progress'].includes(prog)) continue;
+
+        const key = name;
+        if (!countsMap.has(key)) {
+          countsMap.set(key, { assignee: name, assigned: 0, inProgress: 0 });
+        }
+
+        const current = countsMap.get(key);
+
+        // Avoid duplicate count of the same order for same assignee
+        const orderKey = `${order.order_number}-${key}`;
+        if (seen.has(orderKey)) continue;
+        seen.add(orderKey);
+
+        if (prog === 'assigned') current.assigned++;
+        if (prog === 'in progress') current.inProgress++;
       }
-    }
+    });
 
-    const sorted = [...inProgress, ...assigned];
-
-    res.json({ count: sorted.length, data: sorted });
+    const data = Array.from(countsMap.values());
+    res.json({ data });
   } catch (err) {
-    console.error('❌ Error fetching orders by assignee:', err);
+    console.error('Error generating workload chart:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
