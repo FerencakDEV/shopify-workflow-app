@@ -145,7 +145,24 @@ router.get('/by-status', async (req, res) => {
         return res.status(400).json({ error: 'Invalid status' });
     }
 
-    const orders = await Order.find(query);
+    const rawOrders = await Order.find(query);
+
+    const orders = rawOrders.map(order => ({
+      ...order.toObject(),
+      progress: [
+        order.progress_1,
+        order.progress_2,
+        order.progress_3,
+        order.progress_4,
+      ].filter(Boolean),
+      assignee: [
+        order.assignee_1,
+        order.assignee_2,
+        order.assignee_3,
+        order.assignee_4,
+      ].filter(Boolean),
+    }));
+
     res.json({ count: orders.length, orders });
 
   } catch (err) {
