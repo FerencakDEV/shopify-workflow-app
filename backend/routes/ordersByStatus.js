@@ -148,6 +148,61 @@ router.get('/by-status', async (req, res) => {
         };
         break;
 
+        case 'needAttention':
+  query = {
+    $or: [
+      {
+        $and: [
+          { assignee_1: { $nin: [null, '', undefined] } },
+          { $or: [{ progress_1: { $in: [null, '', undefined] } }, { progress_1: { $exists: false } }] }
+        ]
+      },
+      {
+        $and: [
+          { progress_1: { $nin: [null, '', undefined] } },
+          { $or: [{ assignee_1: { $in: [null, '', undefined] } }, { assignee_1: { $exists: false } }] }
+        ]
+      },
+      {
+        $and: [
+          { assignee_2: { $nin: [null, '', undefined] } },
+          { $or: [{ progress_2: { $in: [null, '', undefined] } }, { progress_2: { $exists: false } }] }
+        ]
+      },
+      {
+        $and: [
+          { progress_2: { $nin: [null, '', undefined] } },
+          { $or: [{ assignee_2: { $in: [null, '', undefined] } }, { assignee_2: { $exists: false } }] }
+        ]
+      },
+      {
+        $and: [
+          { assignee_3: { $nin: [null, '', undefined] } },
+          { $or: [{ progress_3: { $in: [null, '', undefined] } }, { progress_3: { $exists: false } }] }
+        ]
+      },
+      {
+        $and: [
+          { progress_3: { $nin: [null, '', undefined] } },
+          { $or: [{ assignee_3: { $in: [null, '', undefined] } }, { assignee_3: { $exists: false } }] }
+        ]
+      },
+      {
+        $and: [
+          { assignee_4: { $nin: [null, '', undefined] } },
+          { $or: [{ progress_4: { $in: [null, '', undefined] } }, { progress_4: { $exists: false } }] }
+        ]
+      },
+      {
+        $and: [
+          { progress_4: { $nin: [null, '', undefined] } },
+          { $or: [{ assignee_4: { $in: [null, '', undefined] } }, { assignee_4: { $exists: false } }] }
+        ]
+      }
+    ]
+  };
+  break;
+
       default:
         console.error('🚫 Invalid status param received:', status);
         return res.status(400).json({ error: 'Invalid status' });
