@@ -46,7 +46,7 @@ router.get('/by-status', async (req, res) => {
      
  query = {
   $or: [
-    { custom_status: regex('New Order') },
+    { custom_status: regex('Urgent New Order') },
     { 'metafields.order-custom-status': regex('New Order') }
   ],
   is_urgent: true,
