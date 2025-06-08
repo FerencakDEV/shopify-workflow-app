@@ -5,7 +5,7 @@ export interface StatusWidgetProps {
   label: string;
   sublabel: string;
   color: string;
-  count: number; // ← počet sa teraz posiela zvonku
+  count: number;
   onClick?: () => void;
 }
 
@@ -23,8 +23,11 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
       className="flex items-center bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-pointer"
     >
       <div
-        className="h-12 w-12 flex items-center justify-center text-white font-bold text-md rounded-l-lg"
-        style={{ backgroundColor: color }}
+        className="h-12 w-12 flex items-center justify-center font-bold text-md rounded-l-lg"
+        style={{
+          backgroundColor: color,
+          color: getTextColor(color),
+        }}
       >
         {count}
       </div>
@@ -43,3 +46,18 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
     </div>
   );
 };
+
+// Funkcia pre určenie správnej farby textu podľa svetlosti pozadia
+function getTextColor(bgColor: string): string {
+  try {
+    const hex = bgColor.replace('#', '').slice(0, 6);
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+    return brightness > 160 ? '#1a1a1a' : '#ffffff';
+  } catch {
+    return '#000000';
+  }
+}
