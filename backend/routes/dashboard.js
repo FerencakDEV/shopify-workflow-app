@@ -41,7 +41,9 @@ router.get('/status-counts', async (req, res) => {
     for (const order of orders) {
       const status = (order.fulfillment_status || '').toLowerCase();
       const customStatus = (order.custom_status || '').toLowerCase();
-      const isUrgent = order.is_urgent === true || order.is_urgent === 'true';
+
+      let isUrgent = order.is_urgent === true || order.is_urgent === 'true';
+      if (customStatus === 'urgent new order') isUrgent = true; // fallback ak chýba
 
       const progresses = [
         order.progress_1,
@@ -60,13 +62,14 @@ router.get('/status-counts', async (req, res) => {
       const noProgress = progresses.every(p => blank.includes(p));
       const noAssignee = assignees.every(a => blank.includes(a));
 
-      if (excludeFulfilled.includes(status)) continue;
-
       // ✅ On Hold
       if (status === 'on-hold') {
         counts.onHold++;
         continue;
       }
+
+      // ✅ Fulfilled exclusion (po On Hold)
+      if (excludeFulfilled.includes(status)) continue;
 
       // ✅ Ready for Pickup
       if (progresses.some(p => regexMatch('ready for pickup').test(p))) {
@@ -75,15 +78,13 @@ router.get('/status-counts', async (req, res) => {
       }
 
       // ✅ Urgent New Order
-      if (['urgent new order'].includes(customStatus) &&
-          noProgress && noAssignee) {
+      if (['urgent new order'].includes(customStatus) && noProgress && noAssignee) {
         counts.urgentNewOrders++;
         continue;
       }
 
       // ✅ New Order
-      if (['new order', 'hold released'].includes(customStatus) &&
-          !isUrgent && noProgress && noAssignee) {
+      if (['new order', 'hold released'].includes(customStatus) && !isUrgent && noProgress && noAssignee) {
         counts.newOrders++;
         continue;
       }
