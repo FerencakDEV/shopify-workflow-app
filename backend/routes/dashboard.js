@@ -16,7 +16,7 @@ router.get('/status-counts', async (req, res) => {
       progress_2: 1,
       progress_3: 1,
       progress_4: 1,
-      id: 1 // pre logovanie order.id
+      id: 1
     });
 
     const counts = {
@@ -33,8 +33,6 @@ router.get('/status-counts', async (req, res) => {
       needAttention: 0,
       allOrders: orders.length
     };
-
-   
 
     const blank = [null, '', undefined];
     const excludeFulfilled = ['fulfilled', 'cancelled', 'ready-for-pickup', 'on-hold'];
@@ -64,93 +62,87 @@ router.get('/status-counts', async (req, res) => {
 
       if (excludeFulfilled.includes(status)) continue;
 
-      // On Hold
-      if (customStatus === 'on hold' && status !== 'fulfilled') {
+      // ✅ On Hold
+      if (customStatus === 'on hold') {
         counts.onHold++;
         continue;
       }
 
-      // Ready for Pickup
+      // ✅ Ready for Pickup
       if (progresses.some(p => regexMatch('ready for pickup').test(p))) {
         counts.readyForPickup++;
         continue;
       }
 
-      // Urgent New Order
-      if (['new order', 'hold released'].includes(customStatus) && isUrgent && noProgress && noAssignee) {
+      // ✅ Urgent New Order
+      if (['urgent new order', 'new order', 'hold released'].includes(customStatus) &&
+          isUrgent && noProgress && noAssignee) {
         counts.urgentNewOrders++;
         continue;
       }
 
-      // New Order
-      if (['new order', 'hold released'].includes(customStatus) && !isUrgent && noProgress && noAssignee) {
+      // ✅ New Order
+      if (['new order', 'hold released'].includes(customStatus) &&
+          !isUrgent && noProgress && noAssignee) {
         counts.newOrders++;
         continue;
       }
 
-      // Assigned Orders
+      // ✅ Assigned Orders
       if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
-        !excludeFulfilled.includes(status) &&
-        progresses.some(p => regexMatch('assigned').test(p))) {
+          progresses.some(p => regexMatch('assigned').test(p))) {
         counts.assignedOrders++;
       }
 
-      // In Progress
+      // ✅ In Progress
       if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
-        !excludeFulfilled.includes(status) &&
-        progresses.some(p => regexMatch('in progress').test(p))) {
+          progresses.some(p => regexMatch('in progress').test(p))) {
         counts.inProgress++;
       }
 
-      // Printed Done
+      // ✅ Printed Done
       if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
-        !excludeFulfilled.includes(status) &&
-        progresses.some(p => regexMatch('printed-done').test(p))) {
+          progresses.some(p => regexMatch('printed-done').test(p))) {
         counts.printedDone++;
       }
 
-      // Finishing & Binding
+      // ✅ Finishing & Binding
       if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
-        !excludeFulfilled.includes(status) &&
-        progresses.some(p => regexMatch('finishing & binding').test(p))) {
+          progresses.some(p => regexMatch('finishing & binding').test(p))) {
         counts.finishingBinding++;
       }
-// To Be Checked (each instance counts)F
-if (status !== 'fulfilled') {
-  const toBeCheckedCount = progresses.filter(p => p === 'to be checked').length;
 
-  if (toBeCheckedCount > 0) {
-    counts.toBeChecked += toBeCheckedCount;
-   
-  }
-}
+      // ✅ To Be Checked (každý výskyt sa ráta)
+      if (status !== 'fulfilled') {
+        const toBeCheckedCount = progresses.filter(p => p === 'to be checked').length;
+        counts.toBeChecked += toBeCheckedCount;
+      }
 
-      // Ready for Dispatch
+      // ✅ Ready for Dispatch
       if (status === 'unfulfilled' &&
-        progresses.some(p => regexMatch('ready for dispatch').test(p))) {
+          progresses.some(p => regexMatch('ready for dispatch').test(p))) {
         counts.readyForDispatch++;
       }
 
-      // Need Attention
-     const empty = [null, '', undefined];
-const needAttentionMatch = [1, 2, 3, 4].some(i => {
-  const a = order[`assignee_${i}`];
-  const p = order[`progress_${i}`];
-  return (
-    (!empty.includes(a) && empty.includes(p)) ||
-    (!empty.includes(p) && empty.includes(a))
-  );
-});
+      // ✅ Need Attention
+      const needAttentionMatch = [1, 2, 3, 4].some(i => {
+        const a = order[`assignee_${i}`];
+        const p = order[`progress_${i}`];
+        return (
+          (!blank.includes(a) && blank.includes(p)) ||
+          (!blank.includes(p) && blank.includes(a))
+        );
+      });
 
-const missingCustomStatus = empty.includes(order.custom_status);
+      const missingCustomStatus = blank.includes(order.custom_status);
 
-if ((needAttentionMatch || missingCustomStatus) && order.fulfillment_status !== 'fulfilled') {
-  counts.needAttention++;
-  continue;
-}
+      if ((needAttentionMatch || missingCustomStatus) && status !== 'fulfilled') {
+        counts.needAttention++;
+        continue;
+      }
     }
 
-    res.json({ counts});
+    res.json({ counts });
   } catch (err) {
     console.error('Dashboard fetch error:', err);
     res.status(500).json({ error: 'Failed to fetch dashboard counts' });
