@@ -8,7 +8,6 @@ interface Counts {
   urgentNewOrders: number;
   assignedOrders: number;
   inProgress: number;
-  printedDone: number;
   finishingBinding: number;
   toBeChecked: number;
   onHold: number;
@@ -23,13 +22,15 @@ const slugMap: Record<string, string> = {
   urgentNewOrders: 'urgent-new-orders',
   assignedOrders: 'assigned-orders',
   inProgress: 'in-progress',
-  printedDone: 'printed-done',
+  printedDone: 'printed-done', // ← môžeš zmazať
   finishingBinding: 'finishing-binding',
   toBeChecked: 'to-be-checked',
   onHold: 'on-hold',
   readyForDispatch: 'ready-for-dispatch',
+  readyForPickup: 'ready-for-pickup', // ✅ doplnené
   needAttention: 'need-attention',
 };
+
 
 const Home = () => {
   const [counts, setCounts] = useState<Counts | null>(null);
@@ -61,18 +62,19 @@ const Home = () => {
   if (loading) return <div className="p-6 text-sm">Loading dashboard...</div>;
   if (error) return <div className="p-6 text-red-600 text-sm">Error: {error}</div>;
 
-  const statusWidgets = [
-    { key: 'newOrders', label: 'New Orders', sub: 'To be assigned', color: '#BCECE0' },
-    { key: 'urgentNewOrders', label: 'Urgent New Orders', sub: 'To be assigned', color: '#FFC2C7' },
-    { key: 'assignedOrders', label: 'Assigned Orders', sub: 'Not started', color: '#D4D4D4' },
-    { key: 'inProgress', label: 'In Progress', sub: 'Print & Design', color: '#FFBD62' },
-    { key: 'printedDone', label: 'Printed-Done', sub: 'Processed', color: '#C1F5C0' },
-    { key: 'finishingBinding', label: 'Finishing & Binding', sub: 'Completing Orders', color: '#FFF4BD' },
-    { key: 'toBeChecked', label: 'To be Checked', sub: 'Before delivery', color: '#D4F1F4' },
-    { key: 'onHold', label: 'On Hold', sub: 'Progress Paused', color: '#F7D6D0' },
-    { key: 'readyForDispatch', label: 'Ready for Dispatch', sub: 'Post, Courier, Taxi', color: '#E5DDC8' },
-    { key: 'needAttention', label: 'Need Attention', sub: 'Orders with errors', color: '#D3BBDD' },
-  ];
+const statusWidgets = [
+  { key: 'newOrders', label: 'New Orders', sub: 'To be assigned', color: '#BCECE0' },
+  { key: 'urgentNewOrders', label: 'Urgent New Orders', sub: 'To be assigned', color: '#FFC2C7' },
+  { key: 'assignedOrders', label: 'Assigned Orders', sub: 'Not started', color: '#D4D4D4' },
+  { key: 'inProgress', label: 'In Progress', sub: 'Print & Design', color: '#FFBD62' },
+  { key: 'finishingBinding', label: 'Finishing & Binding', sub: 'Completing Orders', color: '#FFF4BD' },
+  { key: 'toBeChecked', label: 'To be Checked', sub: 'Before delivery', color: '#D4F1F4' },
+  { key: 'readyForDispatch', label: 'Ready for Dispatch', sub: 'Post, Courier, Taxi', color: '#E5DDC8' }, // 7.
+  { key: 'readyForPickup', label: 'Ready for Pickup', sub: 'Collections', color: '#FBE5C8' }, // 8.
+  { key: 'onHold', label: 'On Hold', sub: 'Progress Paused', color: '#F7D6D0' },
+  { key: 'needAttention', label: 'Need Attention', sub: 'Orders with errors', color: '#D3BBDD' },
+];
+
 
   return (
     <div className="p-6 space-y-8">

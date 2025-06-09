@@ -71,11 +71,14 @@ router.get('/status-counts', async (req, res) => {
       // ✅ Fulfilled exclusion (po On Hold)
       if (excludeFulfilled.includes(status)) continue;
 
-      // ✅ Ready for Pickup
-      if (progresses.some(p => regexMatch('ready for pickup').test(p))) {
-        counts.readyForPickup++;
-        continue;
-      }
+   // ✅ Ready for Pickup
+if (
+  status !== 'fulfilled' &&
+  progresses.some(p => regexMatch('ready for pickup').test(p))
+) {
+  counts.readyForPickup++;
+  continue;
+}
 
       // ✅ Urgent New Order
       if (['urgent new order'].includes(customStatus) && noProgress && noAssignee) {
