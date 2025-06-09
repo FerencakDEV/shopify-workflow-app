@@ -152,10 +152,13 @@ router.get('/by-status', async (req, res) => {
   };
   break;
 
-    case 'needAttention':
+case 'needAttention':
   const empty = [null, '', undefined];
   query = {
-    fulfillment_status: 'unfulfilled', // ✅ presne ako požaduješ
+    fulfillment_status: { 
+      $ne: 'fulfilled',
+      $nin: ['ready-for-pickup'] // vylúči aj ready-for-pickup
+    },
     $or: [
       // Assignee and progress mismatch
       ...[1, 2, 3, 4].flatMap(i => ([

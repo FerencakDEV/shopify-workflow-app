@@ -43,7 +43,7 @@ router.get('/status-counts', async (req, res) => {
       const customStatus = (order.custom_status || '').toLowerCase();
 
       let isUrgent = order.is_urgent === true || order.is_urgent === 'true';
-      if (customStatus === 'urgent new order') isUrgent = true; // fallback ak chýba
+      if (customStatus === 'urgent new order') isUrgent = true;
 
       const progresses = [
         order.progress_1,
@@ -71,77 +71,100 @@ router.get('/status-counts', async (req, res) => {
       // ✅ Fulfilled exclusion (po On Hold)
       if (excludeFulfilled.includes(status)) continue;
 
-   // ✅ Ready for Pickup
-if (
-  status !== 'fulfilled' &&
-  progresses.some(p => regexMatch('ready for pickup').test(p))
-) {
-  counts.readyForPickup++;
-  continue;
-}
+      // ✅ Ready for Pickup
+      if (
+        status !== 'fulfilled' &&
+        progresses.some(p => regexMatch('ready for pickup').test(p))
+      ) {
+        counts.readyForPickup++;
+        continue;
+      }
 
       // ✅ Urgent New Order
-      if (['urgent new order'].includes(customStatus) && noProgress && noAssignee) {
+      if (customStatus === 'urgent new order' && noProgress && noAssignee) {
         counts.urgentNewOrders++;
         continue;
       }
 
       // ✅ New Order
-      if (['new order', 'hold released'].includes(customStatus) && !isUrgent && noProgress && noAssignee) {
+      if (
+        ['new order', 'hold released'].includes(customStatus) &&
+        !isUrgent &&
+        noProgress &&
+        noAssignee
+      ) {
         counts.newOrders++;
         continue;
       }
 
       // ✅ Assigned Orders
-      if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
-          progresses.some(p => regexMatch('assigned').test(p))) {
+      if (
+        ['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
+        progresses.some(p => regexMatch('assigned').test(p))
+      ) {
         counts.assignedOrders++;
       }
 
       // ✅ In Progress
-      if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
-          progresses.some(p => regexMatch('in progress').test(p))) {
+      if (
+        ['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
+        progresses.some(p => regexMatch('in progress').test(p))
+      ) {
         counts.inProgress++;
       }
 
       // ✅ Printed Done
-      if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
-          progresses.some(p => regexMatch('printed-done').test(p))) {
+      if (
+        ['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
+        progresses.some(p => regexMatch('printed-done').test(p))
+      ) {
         counts.printedDone++;
       }
 
       // ✅ Finishing & Binding
-      if (['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
-          progresses.some(p => regexMatch('finishing & binding').test(p))) {
+      if (
+        ['new order', 'urgent new order', 'hold released'].includes(customStatus) &&
+        progresses.some(p => regexMatch('finishing & binding').test(p))
+      ) {
         counts.finishingBinding++;
       }
 
-      // ✅ To Be Checked (každý výskyt sa ráta)
-      if (status !== 'fulfilled') {
-        const toBeCheckedCount = progresses.filter(p => p === 'to be checked').length;
+      // ✅ To Be Checked
+      const toBeCheckedCount = progresses.filter(p => p === 'to be checked').length;
+      if (toBeCheckedCount > 0) {
         counts.toBeChecked += toBeCheckedCount;
       }
 
       // ✅ Ready for Dispatch
-      if (status === 'unfulfilled' &&
-          progresses.some(p => regexMatch('ready for dispatch').test(p))) {
+      if (
+        status === 'unfulfilled' &&
+        progresses.some(p => regexMatch('ready for dispatch').test(p))
+      ) {
         counts.readyForDispatch++;
       }
 
       // ✅ Need Attention
       const needAttentionMatch = [1, 2, 3, 4].some(i => {
-  const a = order[`assignee_${i}`];
-  const p = order[`progress_${i}`];
-  return (
-    (!blank.includes(a) && blank.includes(p)) ||
-    (!blank.includes(p) && blank.includes(a))
-  );
-});
+        const aRaw = order[`assignee_${i}`];
+        const pRaw = order[`progress_${i}`];
 
-if (needAttentionMatch && status === 'unfulfilled') {
-  counts.needAttention++;
-  continue;
-}
+        const a = typeof aRaw === 'string' ? aRaw.trim() : aRaw;
+        const p = typeof pRaw === 'string' ? pRaw.trim() : pRaw;
+
+        return (
+          (!blank.includes(a) && blank.includes(p)) ||
+          (!blank.includes(p) && blank.includes(a))
+        );
+      });
+
+      if (
+        needAttentionMatch &&
+        status === 'unfulfilled' &&
+        order.fulfillment_status?.toLowerCase() !== 'ready-for-pickup'
+      ) {
+        counts.needAttention++;
+        continue;
+      }
     }
 
     res.json({ counts });
