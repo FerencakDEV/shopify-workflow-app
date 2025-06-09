@@ -152,10 +152,10 @@ router.get('/by-status', async (req, res) => {
   };
   break;
 
-        case 'needAttention':
+    case 'needAttention':
   const empty = [null, '', undefined];
   query = {
-    fulfillment_status: { $ne: 'fulfilled' },
+    fulfillment_status: 'unfulfilled', // ✅ presne ako požaduješ
     $or: [
       // Assignee and progress mismatch
       ...[1, 2, 3, 4].flatMap(i => ([
@@ -181,9 +181,7 @@ router.get('/by-status', async (req, res) => {
             }
           ]
         }
-      ])),
-      // Missing custom_status
-      { custom_status: { $in: empty } }
+      ]))
     ]
   };
   break;

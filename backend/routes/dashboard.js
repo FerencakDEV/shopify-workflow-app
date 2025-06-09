@@ -130,20 +130,18 @@ if (
 
       // ✅ Need Attention
       const needAttentionMatch = [1, 2, 3, 4].some(i => {
-        const a = order[`assignee_${i}`];
-        const p = order[`progress_${i}`];
-        return (
-          (!blank.includes(a) && blank.includes(p)) ||
-          (!blank.includes(p) && blank.includes(a))
-        );
-      });
+  const a = order[`assignee_${i}`];
+  const p = order[`progress_${i}`];
+  return (
+    (!blank.includes(a) && blank.includes(p)) ||
+    (!blank.includes(p) && blank.includes(a))
+  );
+});
 
-      const missingCustomStatus = blank.includes(order.custom_status);
-
-      if ((needAttentionMatch || missingCustomStatus) && status !== 'fulfilled') {
-        counts.needAttention++;
-        continue;
-      }
+if (needAttentionMatch && status === 'unfulfilled') {
+  counts.needAttention++;
+  continue;
+}
     }
 
     res.json({ counts });
