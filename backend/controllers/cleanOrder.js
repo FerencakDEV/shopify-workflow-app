@@ -1,13 +1,13 @@
 const cleanOrder = (order, metafields = []) => {
   const getMeta = (key, fallbackKey = null) => {
-    const found = metafields.find((m) => m.key === key);
-    if (found) return found.value?.trim() || '';
-    if (fallbackKey) {
-      const fallback = metafields.find((m) => m.key === fallbackKey);
-      return fallback?.value?.trim() || '';
-    }
-    return '';
-  };
+  const found = metafields.find((m) => m.key === key);
+  if (found && typeof found.value === 'string') return found.value.trim();
+  if (fallbackKey) {
+    const fallback = metafields.find((m) => m.key === fallbackKey);
+    if (fallback && typeof fallback.value === 'string') return fallback.value.trim();
+  }
+  return '';
+};
 
   const custom_status_meta = getMeta('order-custom-status');
   let fulfillment_status = order.fulfillment_status ?? 'unfulfilled';
