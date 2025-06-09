@@ -155,9 +155,8 @@ router.get('/by-status', async (req, res) => {
 case 'needAttention':
   const empty = [null, '', undefined];
   query = {
-    fulfillment_status: {
-      $nin: ['fulfilled', 'ready for pickup'] // správne zápisy
-    },
+    fulfillment_status: 'unfulfilled',
+    custom_status: { $ne: 'ready for pickup' },
     $or: [
       ...[1, 2, 3, 4].flatMap(i => ([
         {
@@ -186,6 +185,7 @@ case 'needAttention':
     ]
   };
   break;
+
 
 
       default:

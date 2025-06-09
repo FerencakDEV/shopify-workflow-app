@@ -159,7 +159,8 @@ router.get('/status-counts', async (req, res) => {
 
 if (
   needAttentionMatch &&
-  !['fulfilled', 'ready for pickup'].includes(status)
+  status === 'unfulfilled' &&
+  customStatus !== 'ready for pickup'
 ) {
   counts.needAttention++;
   continue;
