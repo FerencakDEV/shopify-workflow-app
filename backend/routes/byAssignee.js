@@ -31,49 +31,37 @@ router.get('/by-assignee/:name', async (req, res) => {
       'order_number custom_status fulfillment_status assignee_1 assignee_2 assignee_3 assignee_4 progress_1 progress_2 progress_3 progress_4'
     );
 
-    const orderMap = new Map();
+    const assigned = [];
+    const inProgress = [];
 
     for (const order of orders) {
-      const orderId = order.order_number;
-
       const assignees = [order.assignee_1, order.assignee_2, order.assignee_3, order.assignee_4].filter(Boolean);
       const progresses = [order.progress_1, order.progress_2, order.progress_3, order.progress_4];
 
-      let matchFound = false;
-      let orderType = 'assigned'; // default fallback
-
+      let relevant = false;
       for (let i = 0; i < 4; i++) {
         const a = (order[`assignee_${i + 1}`] || '').trim().toLowerCase();
         const p = (order[`progress_${i + 1}`] || '').trim().toLowerCase();
 
         if (a === assigneeName.toLowerCase() && (p === 'assigned' || p === 'in progress')) {
-          matchFound = true;
-          orderType = p;
-          break;
+          relevant = true;
+
+          const entry = {
+            order_number: order.order_number,
+            custom_status: order.custom_status,
+            fulfillment_status: order.fulfillment_status,
+            assignees,
+            progressList: progresses.filter(Boolean),
+          };
+
+          if (p === 'in progress') {
+            inProgress.push(entry);
+          } else {
+            assigned.push(entry);
+          }
+
+          break; // stačí pridať 1x na výpis
         }
-      }
-
-      if (matchFound && !orderMap.has(orderId)) {
-        orderMap.set(orderId, {
-          order_number: orderId,
-          custom_status: order.custom_status,
-          fulfillment_status: order.fulfillment_status,
-          assignees,
-          progressList: progresses.filter(Boolean),
-          orderType, // used for sorting later
-        });
-      }
-    }
-
-    // Roztriedime podľa typu
-    const inProgress = [];
-    const assigned = [];
-
-    for (const order of orderMap.values()) {
-      if (order.orderType === 'in progress') {
-        inProgress.push(order);
-      } else {
-        assigned.push(order);
       }
     }
 
