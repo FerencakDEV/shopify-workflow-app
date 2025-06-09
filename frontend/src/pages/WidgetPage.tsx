@@ -6,11 +6,11 @@ const statusMap: Record<string, string> = {
   'urgent-new-orders': 'urgentNewOrders',
   'assigned-orders': 'assignedOrders',
   'in-progress': 'inProgress',
-  'printed-done': 'printedDone',
   'finishing-binding': 'finishingBinding',
   'to-be-checked': 'toBeChecked',
   'on-hold': 'onHold',
   'ready-for-dispatch': 'readyForDispatch',
+  'ready-for-pickup': 'readyForPickup', // ✅ pridané
   'need-attention': 'needAttention',
 };
 
@@ -19,11 +19,11 @@ const labelMap: Record<string, string> = {
   urgentNewOrders: 'Urgent New Orders',
   assignedOrders: 'Assigned Orders',
   inProgress: 'In Progress',
-  printedDone: 'Printed-Done',
   finishingBinding: 'Finishing & Binding',
   toBeChecked: 'To be Checked',
   onHold: 'On Hold',
   readyForDispatch: 'Ready for Dispatch',
+  readyForPickup: 'Ready for Pickup', // ✅ pridané
   needAttention: 'Need Attention',
 };
 
