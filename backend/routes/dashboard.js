@@ -145,26 +145,25 @@ router.get('/status-counts', async (req, res) => {
 
       // ✅ Need Attention
       const needAttentionMatch = [1, 2, 3, 4].some(i => {
-        const aRaw = order[`assignee_${i}`];
-        const pRaw = order[`progress_${i}`];
+  const aRaw = order[`assignee_${i}`];
+  const pRaw = order[`progress_${i}`];
 
-        const a = typeof aRaw === 'string' ? aRaw.trim() : aRaw;
-        const p = typeof pRaw === 'string' ? pRaw.trim() : pRaw;
+  const a = typeof aRaw === 'string' ? aRaw.trim() : aRaw;
+  const p = typeof pRaw === 'string' ? pRaw.trim() : pRaw;
 
-        return (
-          (!blank.includes(a) && blank.includes(p)) ||
-          (!blank.includes(p) && blank.includes(a))
-        );
-      });
+  return (
+    (!blank.includes(a) && blank.includes(p)) ||
+    (!blank.includes(p) && blank.includes(a))
+  );
+});
 
-      if (
-        needAttentionMatch &&
-        status === 'unfulfilled' &&
-        order.fulfillment_status?.toLowerCase() !== 'ready-for-pickup'
-      ) {
-        counts.needAttention++;
-        continue;
-      }
+if (
+  needAttentionMatch &&
+  !['fulfilled', 'ready for pickup'].includes(status)
+) {
+  counts.needAttention++;
+  continue;
+}
     }
 
     res.json({ counts });

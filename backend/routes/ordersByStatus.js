@@ -155,12 +155,10 @@ router.get('/by-status', async (req, res) => {
 case 'needAttention':
   const empty = [null, '', undefined];
   query = {
-    fulfillment_status: { 
-      $ne: 'fulfilled',
-      $nin: ['ready-for-pickup'] // vylúči aj ready-for-pickup
+    fulfillment_status: {
+      $nin: ['fulfilled', 'ready for pickup'] // správne zápisy
     },
     $or: [
-      // Assignee and progress mismatch
       ...[1, 2, 3, 4].flatMap(i => ([
         {
           $and: [
@@ -188,6 +186,7 @@ case 'needAttention':
     ]
   };
   break;
+
 
       default:
         console.error('🚫 Invalid status param received:', status);
