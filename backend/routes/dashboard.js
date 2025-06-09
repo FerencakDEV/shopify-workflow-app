@@ -75,8 +75,8 @@ router.get('/status-counts', async (req, res) => {
       }
 
       // ✅ Urgent New Order
-      if (['urgent new order', 'new order', 'hold released'].includes(customStatus) &&
-          isUrgent && noProgress && noAssignee) {
+      if (['urgent new order'].includes(customStatus) &&
+          noProgress && noAssignee) {
         counts.urgentNewOrders++;
         continue;
       }

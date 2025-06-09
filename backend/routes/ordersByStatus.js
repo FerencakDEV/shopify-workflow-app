@@ -39,8 +39,8 @@ router.get('/by-status', async (req, res) => {
 
       case 'urgentNewOrders':
   query = {
-    custom_status: { $in: ['Urgent New Order', 'New Order', 'Hold Released'] }, // ✅ pridané
-    is_urgent: { $in: [true, "true"], $exists: true },
+    custom_status: { $in: ['Urgent New Order'] }, // ✅ pridané
+
     fulfillment_status: { $ne: 'fulfilled' },
     $and: [
       { $or: [{ progress_1: { $exists: false } }, { progress_1: blank }] },
