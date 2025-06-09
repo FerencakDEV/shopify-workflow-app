@@ -156,26 +156,35 @@ router.get('/by-status', async (req, res) => {
   const empty = [null, '', undefined];
   query = {
     fulfillment_status: { $ne: 'fulfilled' },
-    $or: [1, 2, 3, 4].flatMap((i) => ([
-      {
-        $and: [
-          { [`assignee_${i}`]: { $nin: empty } },
-          { $or: [
-              { [`progress_${i}`]: { $in: empty } },
-              { [`progress_${i}`]: { $exists: false } }
-          ]}
-        ]
-      },
-      {
-        $and: [
-          { [`progress_${i}`]: { $nin: empty } },
-          { $or: [
-              { [`assignee_${i}`]: { $in: empty } },
-              { [`assignee_${i}`]: { $exists: false } }
-          ]}
-        ]
-      }
-    ]))
+    $or: [
+      // Assignee and progress mismatch
+      ...[1, 2, 3, 4].flatMap(i => ([
+        {
+          $and: [
+            { [`assignee_${i}`]: { $nin: empty } },
+            {
+              $or: [
+                { [`progress_${i}`]: { $in: empty } },
+                { [`progress_${i}`]: { $exists: false } }
+              ]
+            }
+          ]
+        },
+        {
+          $and: [
+            { [`progress_${i}`]: { $nin: empty } },
+            {
+              $or: [
+                { [`assignee_${i}`]: { $in: empty } },
+                { [`assignee_${i}`]: { $exists: false } }
+              ]
+            }
+          ]
+        }
+      ])),
+      // Missing custom_status
+      { custom_status: { $in: empty } }
+    ]
   };
   break;
 

@@ -132,20 +132,22 @@ if (status !== 'fulfilled') {
       }
 
       // Need Attention
-      const empty = [null, '', undefined];
-      const needAttentionMatch = [1, 2, 3, 4].some(i => {
-        const a = order[`assignee_${i}`];
-        const p = order[`progress_${i}`];
-        return (
-          (!empty.includes(a) && empty.includes(p)) ||
-          (!empty.includes(p) && empty.includes(a))
-        );
-      });
+     const empty = [null, '', undefined];
+const needAttentionMatch = [1, 2, 3, 4].some(i => {
+  const a = order[`assignee_${i}`];
+  const p = order[`progress_${i}`];
+  return (
+    (!empty.includes(a) && empty.includes(p)) ||
+    (!empty.includes(p) && empty.includes(a))
+  );
+});
 
-      if (needAttentionMatch && status !== 'fulfilled') {
-        counts.needAttention++;
-        continue;
-      }
+const missingCustomStatus = empty.includes(order.custom_status);
+
+if ((needAttentionMatch || missingCustomStatus) && order.fulfillment_status !== 'fulfilled') {
+  counts.needAttention++;
+  continue;
+}
     }
 
     res.json({ counts});
