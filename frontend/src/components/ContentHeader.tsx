@@ -40,7 +40,7 @@ const ContentHeader = () => {
       {/* Left block */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full">
         <div className="flex justify-between items-center w-full lg:w-auto">
-          <span className="text-xl font-bold text-green-600 whitespace-nowrap">
+          <span className="text-xl font-bold text-[#008060] whitespace-nowrap">
             Reads <span className="text-black">WorkFlow</span>
           </span>
           <button
@@ -66,7 +66,7 @@ const ContentHeader = () => {
             >
               <span
                 className={`w-2 h-2 rounded-full ${
-                  apiStatus === 'live' ? 'bg-green-500' : 'bg-red-500'
+                  apiStatus === 'live' ? 'bg-green-500 animate-pulse-live' : 'bg-red-500'
                 }`}
               />
               {apiStatus === 'live' ? 'Live' : 'Error'}
@@ -76,11 +76,11 @@ const ContentHeader = () => {
               href="https://www.shopifystatus.com/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800 mt-1 lg:mt-0"
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800 mt-1 lg:mt-0 hover:text-[#008060] transition-colors duration-200"
             >
               Shopify status:
-              <MdCheckCircle className="text-green-600 text-lg" />
-              <span className="text-green-600 font-medium">Online</span>
+              <MdCheckCircle className="text-[#008060] text-lg" />
+              <span className="text-[#008060] font-medium">Online</span>
             </a>
           </div>
         )}
@@ -98,7 +98,7 @@ const ContentHeader = () => {
           <MdSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg" />
         </div>
 
-        {/* Staff button - styled like design */}
+        {/* Staff button */}
         <button className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-sm text-gray-800 font-medium px-3 py-1.5 rounded-md">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM2 17a6 6 0 1112 0H2z" />
