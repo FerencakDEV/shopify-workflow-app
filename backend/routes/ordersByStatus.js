@@ -156,7 +156,7 @@ case 'needAttention':
   const empty = [null, '', undefined];
   query = {
     fulfillment_status: 'unfulfilled',
-    custom_status: { $ne: 'ready for pickup' },
+    custom_status: { $ne: 'Ready for Pickup' },
     $or: [
       ...[1, 2, 3, 4].flatMap(i => ([
         {
