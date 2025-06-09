@@ -40,7 +40,7 @@ const WorkloadChart = () => {
     } else {
       if (!orders[assignee]) {
         try {
-          const res = await fetch(`https://shopify-workflow-app-backend.onrender.com/api/orders/by-assignee/${assignee}`);
+const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/orders/by-assignee-summary');
           const json = await res.json();
           setOrders(prev => ({ ...prev, [assignee]: json.data }));
         } catch (error) {

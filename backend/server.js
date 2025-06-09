@@ -46,6 +46,8 @@ const ordersByStatusRoutes = require('./routes/ordersByStatus');
 app.use('/api/orders', ordersByStatusRoutes);
 const byAssigneeRoutes = require('./routes/byAssignee');
 app.use('/api/orders', byAssigneeRoutes);
+const assigneeSummaryRoutes = require('./routes/assigneeSummary');
+app.use('/api/orders', assigneeSummaryRoutes);
 
 // ✅ Webhooks
 
