@@ -63,7 +63,7 @@ router.get('/status-counts', async (req, res) => {
       if (excludeFulfilled.includes(status)) continue;
 
       // ✅ On Hold
-      if (fulfillment_status === 'on-hold') {
+      if (status === 'on-hold') {
         counts.onHold++;
         continue;
       }
