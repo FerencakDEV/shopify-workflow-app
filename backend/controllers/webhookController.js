@@ -51,7 +51,18 @@ const fetchWithRetry = async (id, maxAttempts = 3, delayMs = 2000) => {
   return { fullOrder: null, metafields: [] };
 };
 
-// CREATE webhook
+// 🔧 Shared fallback logic
+const applyFallbackFulfillmentStatus = (cleaned) => {
+  if (!cleaned.fulfillment_status || cleaned.fulfillment_status === 'null') {
+    const status = cleaned.custom_status?.toLowerCase() || '';
+    if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
+    else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
+    else if (status.includes('on hold')) cleaned.fulfillment_status = 'on hold';
+    else cleaned.fulfillment_status = 'unfulfilled';
+  }
+};
+
+// ✅ CREATE webhook
 const orderCreated = async (req, res) => {
   const webhookOrder = req.body;
   console.log('📦 Webhook – CREATE received:', webhookOrder.name || webhookOrder.id);
@@ -66,9 +77,11 @@ const orderCreated = async (req, res) => {
     const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id);
     if (!fullOrder) return res.status(500).send('Failed to fetch full order');
 
-    const cleanedOrder = await cleanOrder(fullOrder, metafields);
-    await Order.create(cleanedOrder);
-    console.log(`✅ CREATE: Order ${cleanedOrder.name || cleanedOrder.id} added.`);
+    const cleaned = cleanOrder(fullOrder, metafields);
+    applyFallbackFulfillmentStatus(cleaned);
+
+    await Order.create(cleaned);
+    console.log(`✅ CREATE: Order ${cleaned.name || cleaned.id} added.`);
     res.status(200).send('CREATE OK');
   } catch (err) {
     console.error(`❌ CREATE ERROR – ${webhookOrder.name || webhookOrder.id}: ${err.message}`);
@@ -76,7 +89,7 @@ const orderCreated = async (req, res) => {
   }
 };
 
-// UPDATE webhook
+// 🔁 UPDATE webhook
 const orderUpdated = async (req, res) => {
   const webhookOrder = req.body;
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
@@ -85,15 +98,31 @@ const orderUpdated = async (req, res) => {
     const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id);
     if (!fullOrder) return res.status(500).send('Failed to fetch full order');
 
-    const cleanedOrder = await cleanOrder(fullOrder, metafields);
+    const cleaned = cleanOrder(fullOrder, metafields);
+    applyFallbackFulfillmentStatus(cleaned);
 
-    await Order.updateOne(
-      { id: cleanedOrder.id },
-      { $set: cleanedOrder },
-      { upsert: true }
-    );
+    const existing = await Order.findOne({ id: cleaned.id });
 
-    console.log(`✅ UPDATE: Order ${cleanedOrder.name || cleanedOrder.id} updated.`);
+    if (!existing) {
+      await Order.create(cleaned);
+      console.log(`✅ UPDATE created new order ${cleaned.name || cleaned.id}`);
+      return res.status(200).send('UPDATE → Created new');
+    }
+
+    const changed =
+      JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
+      JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
+      existing.order_number !== cleaned.order_number ||
+      existing.fulfillment_status !== cleaned.fulfillment_status ||
+      existing.custom_status !== cleaned.custom_status;
+
+    if (changed) {
+      await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
+      console.log(`🔄 UPDATE modified order ${cleaned.name || cleaned.id}`);
+    } else {
+      console.log(`⏭️ UPDATE skipped – no changes for ${cleaned.name || cleaned.id}`);
+    }
+
     res.status(200).send('UPDATE OK');
   } catch (err) {
     console.error(`❌ UPDATE ERROR – ${webhookOrder.name || webhookOrder.id}: ${err.message}`);
