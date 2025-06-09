@@ -147,8 +147,8 @@ router.get('/by-status', async (req, res) => {
 
       case 'onHold':
   query = {
-    fulfillment_status: { $ne: 'fulfilled' },
-    custom_status: 'On Hold'
+    fulfillment_status: 'on-hold' 
+ 
   };
   break;
 
