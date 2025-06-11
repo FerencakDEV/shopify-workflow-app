@@ -1,10 +1,10 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const axios = require('axios');
-const Order = require('./models/Order');
-const PendingUpdate = require('./models/PendingUpdate');
-const { cleanOrder } = require('./controllers/cleanOrder');
-const { SHOPIFY_API_URL, HEADERS } = require('./config/constants');
+const Order = require('../models/Order');
+const PendingUpdate = require('../models/PendingUpdate');
+const { cleanOrder } = require('../controllers/cleanOrder');
+const { SHOPIFY_API_URL, HEADERS } = require('../config/constants');
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
