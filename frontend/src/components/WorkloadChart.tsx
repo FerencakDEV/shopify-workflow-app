@@ -22,18 +22,25 @@ const WorkloadChart = () => {
   const [orders, setOrders] = useState<Record<string, OrderEntry[]>>({});
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/orders/by-assignee-summary');
+  const fetchData = async () => {
+    try {
+      const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/orders/by-assignee-summary');
+      const json = await res.json();
+      setWorkloadData(json.data);
+    } catch (error) {
+      console.error('Error fetching workload data:', error);
+    }
+  };
 
-        const json = await res.json();
-        setWorkloadData(json.data);
-      } catch (error) {
-        console.error('Error fetching workload data:', error);
-      }
-    };
+  fetchData(); // prvé načítanie
+
+  const interval = setInterval(() => {
+    console.log('🔁 Auto-refreshing workload data...');
     fetchData();
-  }, []);
+  }, 30000); // ⏱️ každých 30 sekúnd
+
+  return () => clearInterval(interval); // 🧹 cleanup
+}, []);
 
   const toggleAssignee = async (assignee: string) => {
     if (expandedAssignee === assignee) {
