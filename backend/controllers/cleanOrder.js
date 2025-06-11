@@ -9,13 +9,23 @@ const cleanOrder = (order, metafields = []) => {
     return '';
   };
 
+  const isUrgentFromNote = () => {
+    return Array.isArray(order.note_attributes) &&
+      order.note_attributes.some(attr =>
+        attr.name?.toLowerCase().includes('urgency') &&
+        attr.value?.toLowerCase() === 'urgent'
+      );
+  };
+
   const custom_status_meta = getMeta('order-custom-status');
   let fulfillment_status = order.fulfillment_status ?? 'unfulfilled';
-  const is_urgent = getMeta('is-urgent') === 'true';
+  const is_urgent = isUrgentFromNote();
 
-  let custom_status = custom_status_meta || fulfillment_status;
+  let custom_status;
 
-  if (!custom_status_meta) {
+  if (custom_status_meta) {
+    custom_status = is_urgent ? 'Urgent New Order' : custom_status_meta;
+  } else {
     console.warn(`⚠️ cleanOrder: custom_status_meta is empty for order ${order.id}`);
     custom_status = is_urgent ? 'Urgent New Order' : 'New Order';
   }
