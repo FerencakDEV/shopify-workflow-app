@@ -111,10 +111,20 @@ const orderUpdated = async (req, res) => {
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
 
   try {
-    const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id);
-    if (!fullOrder) return res.status(500).send('Failed to fetch full order');
+    // 🕒 Počkaj najprv 3 sekundy
+    await delay(3000);
+
+    // 🔄 Fetchni order a metafields ako cron
+    const fullOrder = await fetchFullOrder(webhookOrder.id);
+    const metafields = await fetchMetafields(webhookOrder.id);
+
+    if (!fullOrder) {
+      console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after delay`);
+      return res.status(500).send('Failed to fetch full order');
+    }
 
     const cleaned = cleanOrder(fullOrder, metafields);
+
     if (!cleaned.custom_status) {
       console.warn(`⚠️ cleanOrder: custom_status_meta is empty for order ${cleaned.id}`);
     }
@@ -149,5 +159,6 @@ const orderUpdated = async (req, res) => {
     res.status(500).send('UPDATE Error');
   }
 };
+
 
 module.exports = { orderCreated, orderUpdated };
