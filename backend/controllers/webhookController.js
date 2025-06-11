@@ -117,16 +117,27 @@ const orderUpdated = async (req, res) => {
     let { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 5, 3000);
 
     if (!fullOrder || metafields.length === 0) {
-      console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
-      await delay(10000);
-      fullOrder = await fetchFullOrder(webhookOrder.id);
-      metafields = await fetchMetafields(webhookOrder.id);
-    }
+  console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
+  await delay(10000);
+  fullOrder = await fetchFullOrder(webhookOrder.id);
+  metafields = await fetchMetafields(webhookOrder.id);
+}
 
-    if (!fullOrder) {
-      console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available`);
-      return res.status(500).send('Failed to fetch full order');
-    }
+if (!fullOrder) {
+  console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after retries`);
+} else {
+  console.log(`✅ Full order fetched: ${fullOrder.id}, updated_at: ${fullOrder.updated_at}`);
+}
+
+if (metafields.length === 0) {
+  console.warn(`❌ No metafields for order ${webhookOrder.id}`);
+} else {
+  console.log(`🎯 Metafields after retries:`, metafields.map(m => m.key));
+}
+
+if (!fullOrder || metafields.length === 0) {
+  return res.status(200).send('Skipped update due to missing data');
+}
 
     // 📦 Log objednávky a metafieldov
     console.log('📦 Order timestamps:', {
