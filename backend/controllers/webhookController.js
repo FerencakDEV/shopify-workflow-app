@@ -111,19 +111,28 @@ const orderUpdated = async (req, res) => {
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
 
   try {
-    // 🕒 Počkaj najprv 3 sekundy
+    // ⏳ 1. Počkaj 3 sekundy predtým ako začneš volať API
     await delay(3000);
 
-    // 🔁 Retryni fetch s 3 pokusmi po 2s
-    const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 3, 2000);
+    // 🔁 2. Retry fetch 5x po 3s
+    let { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 5, 3000);
 
+    // ❗ 3. Ak ešte stále nič, počkaj extra 10s a skús znova (ako v orderCreated)
+    if (!fullOrder || metafields.length === 0) {
+      console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
+      await delay(10000);
+      fullOrder = await fetchFullOrder(webhookOrder.id);
+      metafields = await fetchMetafields(webhookOrder.id);
+    }
+
+    // 🛑 4. Ak stále nič, skonči
     if (!fullOrder) {
-      console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after retry`);
+      console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available`);
       return res.status(500).send('Failed to fetch full order');
     }
 
+    // ✅ 5. Spracuj objednávku
     const cleaned = cleanOrder(fullOrder, metafields);
-
     if (!cleaned.custom_status) {
       console.warn(`⚠️ cleanOrder: custom_status_meta is empty for order ${cleaned.id}`);
     }
@@ -131,13 +140,13 @@ const orderUpdated = async (req, res) => {
     applyFallbackFulfillmentStatus(cleaned);
 
     const existing = await Order.findOne({ id: cleaned.id });
-
     if (!existing) {
       await Order.create(cleaned);
       console.log(`✅ UPDATE created new order ${cleaned.name || cleaned.id}`);
       return res.status(200).send('UPDATE → Created new');
     }
 
+    // 🔍 6. Zisti či sa niečo zmenilo
     const changed =
       JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
       JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
