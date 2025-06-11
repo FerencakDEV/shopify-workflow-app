@@ -23,6 +23,17 @@ const fetchMetafields = async (orderId) => {
   }
 };
 
+const fetchMetafieldsWithRetry = async (orderId, attempts = 5, delayMs = 3000) => {
+  for (let i = 0; i < attempts; i++) {
+    const metafields = await fetchMetafields(orderId);
+    if (metafields.length) return metafields;
+    console.log(`⏳ Metafields not ready for ${orderId}, attempt ${i + 1}/${attempts}`);
+    await delay(delayMs);
+  }
+  console.warn(`⚠️ Metafields still empty after retries for order ${orderId}`);
+  return [];
+};
+
 const fetchFullOrder = async (id) => {
   try {
     const url = `${SHOPIFY_API_URL}/orders/${id}.json`;
@@ -34,16 +45,16 @@ const fetchFullOrder = async (id) => {
   }
 };
 
-const fetchWithRetry = async (id, maxAttempts = 3, delayMs = 2000) => {
+const fetchWithRetry = async (id, maxAttempts = 5, delayMs = 3000) => {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const fullOrder = await fetchFullOrder(id);
-    const metafields = await fetchMetafields(id);
+    const metafields = await fetchMetafieldsWithRetry(id);
 
     if (fullOrder) {
       return { fullOrder, metafields };
     }
 
-    console.log(`⏳ [${attempt}/${maxAttempts}] Waiting for full data of ${id}...`);
+    console.log(`⏳ [${attempt}/${maxAttempts}] Waiting for full order data of ${id}...`);
     await delay(delayMs);
   }
 
@@ -51,9 +62,8 @@ const fetchWithRetry = async (id, maxAttempts = 3, delayMs = 2000) => {
   return { fullOrder: null, metafields: [] };
 };
 
-// 🔧 Shared fallback logic
 const applyFallbackFulfillmentStatus = (cleaned) => {
-  if (!cleaned.fulfillment_status || cleaned.fulfillment_status === 'null') {
+  if (!cleaned.fulfillment_status) {
     const status = cleaned.custom_status?.toLowerCase() || '';
     if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
     else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
@@ -78,6 +88,10 @@ const orderCreated = async (req, res) => {
     if (!fullOrder) return res.status(500).send('Failed to fetch full order');
 
     const cleaned = cleanOrder(fullOrder, metafields);
+    if (!cleaned.custom_status) {
+      console.warn(`⚠️ cleanOrder: custom_status_meta is empty for order ${cleaned.id}`);
+    }
+
     applyFallbackFulfillmentStatus(cleaned);
 
     await Order.create(cleaned);
@@ -99,6 +113,10 @@ const orderUpdated = async (req, res) => {
     if (!fullOrder) return res.status(500).send('Failed to fetch full order');
 
     const cleaned = cleanOrder(fullOrder, metafields);
+    if (!cleaned.custom_status) {
+      console.warn(`⚠️ cleanOrder: custom_status_meta is empty for order ${cleaned.id}`);
+    }
+
     applyFallbackFulfillmentStatus(cleaned);
 
     const existing = await Order.findOne({ id: cleaned.id });
