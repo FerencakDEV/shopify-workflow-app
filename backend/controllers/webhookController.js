@@ -111,13 +111,11 @@ const orderUpdated = async (req, res) => {
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
 
   try {
-    // ⏳ 1. Počkaj 3 sekundy predtým ako začneš volať API
-    await delay(3000);
+    await delay(3000); // ⏳ čakaj 3s
 
-    // 🔁 2. Retry fetch 5x po 3s
+    // 🔁 Retry s logmi
     let { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 5, 3000);
 
-    // ❗ 3. Ak ešte stále nič, počkaj extra 10s a skús znova (ako v orderCreated)
     if (!fullOrder || metafields.length === 0) {
       console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
       await delay(10000);
@@ -125,14 +123,32 @@ const orderUpdated = async (req, res) => {
       metafields = await fetchMetafields(webhookOrder.id);
     }
 
-    // 🛑 4. Ak stále nič, skonči
     if (!fullOrder) {
       console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available`);
       return res.status(500).send('Failed to fetch full order');
     }
 
-    // ✅ 5. Spracuj objednávku
+    // 📦 Log objednávky a metafieldov
+    console.log('📦 Order timestamps:', {
+      created_at: fullOrder.created_at,
+      updated_at: fullOrder.updated_at,
+      now: new Date().toISOString(),
+    });
+
+    console.log(`📌 Metafields (${metafields.length}):`, metafields.map(m => m.key));
+
     const cleaned = cleanOrder(fullOrder, metafields);
+
+    // 🧾 Základný výpis cleaned dát
+    console.log('🧾 Cleaned order preview:', {
+      id: cleaned.id,
+      order_number: cleaned.order_number,
+      assignee: cleaned.assignee,
+      progress: cleaned.progress,
+      custom_status: cleaned.custom_status,
+      fulfillment_status: cleaned.fulfillment_status,
+    });
+
     if (!cleaned.custom_status) {
       console.warn(`⚠️ cleanOrder: custom_status_meta is empty for order ${cleaned.id}`);
     }
@@ -140,23 +156,36 @@ const orderUpdated = async (req, res) => {
     applyFallbackFulfillmentStatus(cleaned);
 
     const existing = await Order.findOne({ id: cleaned.id });
+
     if (!existing) {
       await Order.create(cleaned);
       console.log(`✅ UPDATE created new order ${cleaned.name || cleaned.id}`);
       return res.status(200).send('UPDATE → Created new');
     }
 
-    // 🔍 6. Zisti či sa niečo zmenilo
-    const changed =
-      JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
-      JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
-      existing.order_number !== cleaned.order_number ||
-      existing.fulfillment_status !== cleaned.fulfillment_status ||
-      existing.custom_status !== cleaned.custom_status;
+    // 🔍 Porovnanie a log rozdielov
+    const changedFields = [];
 
-    if (changed) {
+    const compareField = (fieldName) => {
+      const existingVal = JSON.stringify(existing[fieldName]);
+      const cleanedVal = JSON.stringify(cleaned[fieldName]);
+      if (existingVal !== cleanedVal) {
+        changedFields.push(fieldName);
+        console.log(`🔁 Field changed: ${fieldName}`);
+        console.log(`  🕒 from:`, existing[fieldName]);
+        console.log(`  🆕 to  :`, cleaned[fieldName]);
+      }
+    };
+
+    compareField('assignee');
+    compareField('progress');
+    compareField('order_number');
+    compareField('fulfillment_status');
+    compareField('custom_status');
+
+    if (changedFields.length) {
       await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
-      console.log(`🔄 UPDATE modified order ${cleaned.name || cleaned.id}`);
+      console.log(`✅ UPDATE modified order ${cleaned.name || cleaned.id}. Changed fields: ${changedFields.join(', ')}`);
     } else {
       console.log(`⏭️ UPDATE skipped – no changes for ${cleaned.name || cleaned.id}`);
     }
