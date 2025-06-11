@@ -105,52 +105,40 @@ const orderCreated = async (req, res) => {
   }
 };
 
-// 🔁 UPDATE webhook
 const orderUpdated = async (req, res) => {
   const webhookOrder = req.body;
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
 
   try {
-    await delay(3000); // ⏳ čakaj 3s
+    // 🕒 1. Čakaj 20 sekúnd, aby Shopify stihol zapísať metafields
+    console.log(`🕒 Waiting 20s for Shopify to finalize order ${webhookOrder.id}...`);
+    await delay(20000);
 
-    // 🔁 Retry s logmi
+    // 🔁 2. Skús retry 5× po 3s
     let { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 5, 3000);
 
+    // ⏳ 3. Ak stále nič, skús dodatočný fetch po 10s
     if (!fullOrder || metafields.length === 0) {
-  console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
-  await delay(10000);
-  fullOrder = await fetchFullOrder(webhookOrder.id);
-  metafields = await fetchMetafields(webhookOrder.id);
-}
+      console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
+      await delay(10000);
+      fullOrder = await fetchFullOrder(webhookOrder.id);
+      metafields = await fetchMetafields(webhookOrder.id);
+    }
 
-if (!fullOrder) {
-  console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after retries`);
-} else {
-  console.log(`✅ Full order fetched: ${fullOrder.id}, updated_at: ${fullOrder.updated_at}`);
-}
+    // ❌ 4. Ak stále nič, logni a skonči
+    if (!fullOrder) {
+      console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after all attempts`);
+      return res.status(500).send('Failed to fetch full order');
+    }
 
-if (metafields.length === 0) {
-  console.warn(`❌ No metafields for order ${webhookOrder.id}`);
-} else {
-  console.log(`🎯 Metafields after retries:`, metafields.map(m => m.key));
-}
+    if (metafields.length === 0) {
+      console.warn(`❌ UPDATE aborted – no metafields for order ${webhookOrder.id}`);
+      return res.status(200).send('Skipped update – no metafields');
+    }
 
-if (!fullOrder || metafields.length === 0) {
-  return res.status(200).send('Skipped update due to missing data');
-}
-
-    // 📦 Log objednávky a metafieldov
-    console.log('📦 Order timestamps:', {
-      created_at: fullOrder.created_at,
-      updated_at: fullOrder.updated_at,
-      now: new Date().toISOString(),
-    });
-
-    console.log(`📌 Metafields (${metafields.length}):`, metafields.map(m => m.key));
-
+    // ✅ 5. cleanOrder + fallback
     const cleaned = cleanOrder(fullOrder, metafields);
 
-    // 🧾 Základný výpis cleaned dát
     console.log('🧾 Cleaned order preview:', {
       id: cleaned.id,
       order_number: cleaned.order_number,
@@ -166,6 +154,7 @@ if (!fullOrder || metafields.length === 0) {
 
     applyFallbackFulfillmentStatus(cleaned);
 
+    // 🔍 6. Nájdi existujúci záznam
     const existing = await Order.findOne({ id: cleaned.id });
 
     if (!existing) {
@@ -174,7 +163,7 @@ if (!fullOrder || metafields.length === 0) {
       return res.status(200).send('UPDATE → Created new');
     }
 
-    // 🔍 Porovnanie a log rozdielov
+    // 📋 7. Porovnaj zmeny
     const changedFields = [];
 
     const compareField = (fieldName) => {
@@ -182,9 +171,9 @@ if (!fullOrder || metafields.length === 0) {
       const cleanedVal = JSON.stringify(cleaned[fieldName]);
       if (existingVal !== cleanedVal) {
         changedFields.push(fieldName);
-        console.log(`🔁 Field changed: ${fieldName}`);
-        console.log(`  🕒 from:`, existing[fieldName]);
-        console.log(`  🆕 to  :`, cleaned[fieldName]);
+        console.log(`🔁 Changed ${fieldName}:`);
+        console.log(`   🕒 from:`, existing[fieldName]);
+        console.log(`   🆕 to  :`, cleaned[fieldName]);
       }
     };
 
@@ -196,7 +185,7 @@ if (!fullOrder || metafields.length === 0) {
 
     if (changedFields.length) {
       await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
-      console.log(`✅ UPDATE modified order ${cleaned.name || cleaned.id}. Changed fields: ${changedFields.join(', ')}`);
+      console.log(`✅ UPDATE modified order ${cleaned.name || cleaned.id}. Changed: ${changedFields.join(', ')}`);
     } else {
       console.log(`⏭️ UPDATE skipped – no changes for ${cleaned.name || cleaned.id}`);
     }
