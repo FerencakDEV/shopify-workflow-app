@@ -2,6 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 const Order = require('../models/Order');
 const { cleanOrder } = require('../controllers/cleanOrder');
+const PendingUpdate = require('../models/PendingUpdate');
 
 const { SHOPIFY_API_URL, SHOPIFY_TOKEN } = process.env;
 
@@ -110,14 +111,14 @@ const orderUpdated = async (req, res) => {
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
 
   try {
-    // 🕒 1. Čakaj 20 sekúnd, aby Shopify stihol zapísať metafields
+    // 🕒 1. Počkaj 20 sekúnd (kvôli oneskoreniu zápisu metafields v Shopify)
     console.log(`🕒 Waiting 20s for Shopify to finalize order ${webhookOrder.id}...`);
     await delay(20000);
 
-    // 🔁 2. Skús retry 5× po 3s
+    // 🔁 2. Retry 5× s 3s prestávkou
     let { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 5, 3000);
 
-    // ⏳ 3. Ak stále nič, skús dodatočný fetch po 10s
+    // ⏳ 3. Dodatočný pokus po 10s ak sú dáta stále prázdne
     if (!fullOrder || metafields.length === 0) {
       console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
       await delay(10000);
@@ -125,18 +126,24 @@ const orderUpdated = async (req, res) => {
       metafields = await fetchMetafields(webhookOrder.id);
     }
 
-    // ❌ 4. Ak stále nič, logni a skonči
+    // ❌ 4. Ak sa nepodarilo načítať objednávku
     if (!fullOrder) {
       console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after all attempts`);
       return res.status(500).send('Failed to fetch full order');
     }
 
+    // 📥 5. Ak metafields stále nie sú, presuň do pending bufferu
     if (metafields.length === 0) {
-      console.warn(`❌ UPDATE aborted – no metafields for order ${webhookOrder.id}`);
-      return res.status(200).send('Skipped update – no metafields');
+      console.warn(`📭 UPDATE fallback: Metafields prázdne pre ${webhookOrder.id}, pridávam do PendingUpdates`);
+      await PendingUpdate.updateOne(
+        { orderId: webhookOrder.id },
+        { orderId: webhookOrder.id, receivedAt: new Date() },
+        { upsert: true }
+      );
+      return res.status(200).send('UPDATE deferred – metafields missing');
     }
 
-    // ✅ 5. cleanOrder + fallback
+    // ✅ 6. cleanOrder + fallback
     const cleaned = cleanOrder(fullOrder, metafields);
 
     console.log('🧾 Cleaned order preview:', {
@@ -154,7 +161,7 @@ const orderUpdated = async (req, res) => {
 
     applyFallbackFulfillmentStatus(cleaned);
 
-    // 🔍 6. Nájdi existujúci záznam
+    // 🔍 7. Hľadanie existujúceho záznamu
     const existing = await Order.findOne({ id: cleaned.id });
 
     if (!existing) {
@@ -163,7 +170,7 @@ const orderUpdated = async (req, res) => {
       return res.status(200).send('UPDATE → Created new');
     }
 
-    // 📋 7. Porovnaj zmeny
+    // 📋 8. Porovnaj a loguj zmenené polia
     const changedFields = [];
 
     const compareField = (fieldName) => {
@@ -196,6 +203,7 @@ const orderUpdated = async (req, res) => {
     res.status(500).send('UPDATE Error');
   }
 };
+
 
 
 module.exports = { orderCreated, orderUpdated };
