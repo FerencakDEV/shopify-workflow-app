@@ -108,52 +108,38 @@ const orderCreated = async (req, res) => {
 
 const orderUpdated = async (req, res) => {
   const webhookOrder = req.body;
-  console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || webhookOrder.id);
+  const orderId = webhookOrder.id;
+
+  console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || orderId);
 
   try {
-    // 🕒 1. Počkaj 20 sekúnd (kvôli oneskoreniu zápisu metafields v Shopify)
-    console.log(`🕒 Waiting 20s for Shopify to finalize order ${webhookOrder.id}...`);
-    await delay(20000);
+    // ⏳ 1. Čakanie 10 sekúnd
+    console.log(`🕒 Waiting 10s for Shopify to finalize order ${orderId}...`);
+    await delay(10000);
 
-    // 🔁 2. Retry 5× s 3s prestávkou
-    let { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 5, 3000);
+    // 🔁 2. Fetch komplet objednávku + metafields z API
+    const fullOrder = await fetchFullOrder(orderId);
+    const metafields = await fetchMetafields(orderId);
 
-    // ⏳ 3. Dodatočný pokus po 10s ak sú dáta stále prázdne
-    if (!fullOrder || metafields.length === 0) {
-      console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
-      await delay(10000);
-      fullOrder = await fetchFullOrder(webhookOrder.id);
-      metafields = await fetchMetafields(webhookOrder.id);
-    }
-
-    // ❌ 4. Ak sa nepodarilo načítať objednávku
+    // ❌ 3. Ak objednávka chýba
     if (!fullOrder) {
-      console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after all attempts`);
+      console.error(`❌ UPDATE: Full order ${orderId} not available`);
       return res.status(500).send('Failed to fetch full order');
     }
 
-    // 📥 5. Ak metafields stále nie sú, presuň do pending bufferu
+    // 📭 4. Ak metafields sú prázdne → pending buffer
     if (metafields.length === 0) {
-      console.warn(`📭 UPDATE fallback: Metafields prázdne pre ${webhookOrder.id}, pridávam do PendingUpdates`);
+      console.warn(`📭 UPDATE fallback: Metafields prázdne pre ${orderId}, pridávam do PendingUpdates`);
       await PendingUpdate.updateOne(
-        { orderId: webhookOrder.id },
-        { orderId: webhookOrder.id, receivedAt: new Date() },
+        { orderId },
+        { orderId, receivedAt: new Date() },
         { upsert: true }
       );
       return res.status(200).send('UPDATE deferred – metafields missing');
     }
 
-    // ✅ 6. cleanOrder + fallback
+    // ✅ 5. cleanOrder + fallback
     const cleaned = cleanOrder(fullOrder, metafields);
-
-    console.log('🧾 Cleaned order preview:', {
-      id: cleaned.id,
-      order_number: cleaned.order_number,
-      assignee: cleaned.assignee,
-      progress: cleaned.progress,
-      custom_status: cleaned.custom_status,
-      fulfillment_status: cleaned.fulfillment_status,
-    });
 
     if (!cleaned.custom_status) {
       console.warn(`⚠️ cleanOrder: custom_status_meta is empty for order ${cleaned.id}`);
@@ -161,7 +147,7 @@ const orderUpdated = async (req, res) => {
 
     applyFallbackFulfillmentStatus(cleaned);
 
-    // 🔍 7. Hľadanie existujúceho záznamu
+    // 🔍 6. Porovnanie a zápis do DB
     const existing = await Order.findOne({ id: cleaned.id });
 
     if (!existing) {
@@ -170,7 +156,6 @@ const orderUpdated = async (req, res) => {
       return res.status(200).send('UPDATE → Created new');
     }
 
-    // 📋 8. Porovnaj a loguj zmenené polia
     const changedFields = [];
 
     const compareField = (fieldName) => {
@@ -184,11 +169,7 @@ const orderUpdated = async (req, res) => {
       }
     };
 
-    compareField('assignee');
-    compareField('progress');
-    compareField('order_number');
-    compareField('fulfillment_status');
-    compareField('custom_status');
+    ['assignee', 'progress', 'order_number', 'fulfillment_status', 'custom_status'].forEach(compareField);
 
     if (changedFields.length) {
       await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
@@ -199,10 +180,11 @@ const orderUpdated = async (req, res) => {
 
     res.status(200).send('UPDATE OK');
   } catch (err) {
-    console.error(`❌ UPDATE ERROR – ${webhookOrder.name || webhookOrder.id}: ${err.message}`);
+    console.error(`❌ UPDATE ERROR – ${orderId}: ${err.message}`);
     res.status(500).send('UPDATE Error');
   }
 };
+
 
 
 
