@@ -11,10 +11,13 @@ const cleanOrder = (order, metafields = []) => {
 
   const custom_status_meta = getMeta('order-custom-status');
   let fulfillment_status = order.fulfillment_status ?? 'unfulfilled';
-  const custom_status = custom_status_meta || fulfillment_status;
+  const is_urgent = getMeta('is-urgent') === 'true';
+
+  let custom_status = custom_status_meta || fulfillment_status;
 
   if (!custom_status_meta) {
     console.warn(`⚠️ cleanOrder: custom_status_meta is empty for order ${order.id}`);
+    custom_status = is_urgent ? 'Urgent New Order' : 'New Order';
   }
 
   // 🎯 Úprava fulfillment_status podľa custom_status
@@ -63,7 +66,7 @@ const cleanOrder = (order, metafields = []) => {
 
     custom_status,
     expected_time: getMeta('expected-time'),
-    is_urgent: getMeta('is-urgent') === 'true',
+    is_urgent,
 
     line_items: (order.line_items || []).map((item) => ({
       title: item.title,
