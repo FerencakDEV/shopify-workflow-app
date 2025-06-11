@@ -114,12 +114,11 @@ const orderUpdated = async (req, res) => {
     // 🕒 Počkaj najprv 3 sekundy
     await delay(3000);
 
-    // 🔄 Fetchni order a metafields ako cron
-    const fullOrder = await fetchFullOrder(webhookOrder.id);
-    const metafields = await fetchMetafields(webhookOrder.id);
+    // 🔁 Retryni fetch s 3 pokusmi po 2s
+    const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id, 3, 2000);
 
     if (!fullOrder) {
-      console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after delay`);
+      console.error(`❌ UPDATE: Full order ${webhookOrder.id} not available after retry`);
       return res.status(500).send('Failed to fetch full order');
     }
 
