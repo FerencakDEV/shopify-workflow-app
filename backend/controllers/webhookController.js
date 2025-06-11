@@ -30,7 +30,6 @@ const fetchMetafieldsWithRetry = async (orderId, attempts = 5, delayMs = 3000) =
     console.log(`⏳ Metafields not ready for ${orderId}, attempt ${i + 1}/${attempts}`);
     await delay(delayMs);
   }
-  console.warn(`⚠️ Metafields still empty after retries for order ${orderId}`);
   return [];
 };
 
@@ -49,16 +48,12 @@ const fetchWithRetry = async (id, maxAttempts = 5, delayMs = 3000) => {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const fullOrder = await fetchFullOrder(id);
     const metafields = await fetchMetafieldsWithRetry(id);
-
     if (fullOrder) {
       return { fullOrder, metafields };
     }
-
     console.log(`⏳ [${attempt}/${maxAttempts}] Waiting for full order data of ${id}...`);
     await delay(delayMs);
   }
-
-  console.warn(`⚠️ Failed to fetch full order data for ${id}`);
   return { fullOrder: null, metafields: [] };
 };
 
@@ -84,8 +79,16 @@ const orderCreated = async (req, res) => {
       return res.status(200).send('Already exists');
     }
 
-    const { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id);
-    if (!fullOrder) return res.status(500).send('Failed to fetch full order');
+    let { fullOrder, metafields } = await fetchWithRetry(webhookOrder.id);
+    
+    if (!fullOrder || !metafields.length) {
+      console.warn(`❗ Delayed retry for webhook order ${webhookOrder.id}`);
+      await delay(10000); // dodatočné čakanie pre Flow
+      fullOrder = await fetchFullOrder(webhookOrder.id);
+      metafields = await fetchMetafields(webhookOrder.id);
+    }
+
+    if (!fullOrder) return res.status(500).send('Failed to fetch full order after delay');
 
     const cleaned = cleanOrder(fullOrder, metafields);
     if (!cleaned.custom_status) {
@@ -93,7 +96,6 @@ const orderCreated = async (req, res) => {
     }
 
     applyFallbackFulfillmentStatus(cleaned);
-
     await Order.create(cleaned);
     console.log(`✅ CREATE: Order ${cleaned.name || cleaned.id} added.`);
     res.status(200).send('CREATE OK');
