@@ -37,7 +37,7 @@ const WorkloadChart = () => {
   const interval = setInterval(() => {
     console.log('🔁 Auto-refreshing workload data...');
     fetchData();
-  }, 30000); // ⏱️ každých 30 sekúnd
+  }, 10000); // ⏱️ každých 30 sekúnd
 
   return () => clearInterval(interval); // 🧹 cleanup
 }, []);
