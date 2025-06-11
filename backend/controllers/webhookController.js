@@ -121,6 +121,9 @@ const orderUpdated = async (req, res) => {
     const fullOrder = await fetchFullOrder(orderId);
     const metafields = await fetchMetafields(orderId);
 
+    console.log(`📦 Metafields pre ${orderId}:`);
+    console.dir(metafields, { depth: null });
+
     // ❌ 3. Ak objednávka chýba
     if (!fullOrder) {
       console.error(`❌ UPDATE: Full order ${orderId} not available`);
@@ -139,6 +142,7 @@ const orderUpdated = async (req, res) => {
     }
 
     // ✅ 5. cleanOrder + fallback
+    console.log('🧼 Volám cleanOrder...');
     const cleaned = cleanOrder(fullOrder, metafields);
 
     if (!cleaned.custom_status) {
@@ -184,6 +188,7 @@ const orderUpdated = async (req, res) => {
     res.status(500).send('UPDATE Error');
   }
 };
+
 
 
 
