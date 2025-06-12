@@ -144,37 +144,43 @@ const Home = () => {
 
         {/* Workload */}
         <div
-          ref={workloadRef}
-          className={`relative ${isOrdersFullscreen ? 'hidden' : isWorkloadFullscreen ? 'fixed inset-0 z-50 bg-white p-6 overflow-auto' : 'lg:col-span-7 flex flex-col h-full'}`}
-        >
-          {/* Fullscreen toggle */}
-          <button
-            onClick={() => toggleFullscreen('workload')}
-            className="absolute top-0 right-0 z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition"
-            title={isWorkloadFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          >
-            {isWorkloadFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
-          </button>
+  ref={workloadRef}
+  className={`relative ${
+    isOrdersFullscreen
+      ? 'hidden'
+      : isWorkloadFullscreen
+      ? 'fixed inset-0 top-[64px] z-50 bg-white overflow-auto'
+      : 'lg:col-span-7 flex flex-col h-full'
+  }`}
+>
+  {/* Fullscreen Button for Workload */}
+  <button
+    onClick={() => toggleFullscreen('workload')}
+    className={`absolute ${isWorkloadFullscreen ? 'top-4 right-4' : 'top-0 right-0'} z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition`}
+    title={isWorkloadFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+  >
+    {isWorkloadFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+  </button>
 
-          {!isWorkloadFullscreen && (
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <h2 className="text-[18px] font-semibold text-gray-900">Workload</h2>
-                <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">
-                  Print & Design
-                </span>
-              </div>
-            </div>
-          )}
+  {!isWorkloadFullscreen && (
+    <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center gap-2">
+        <h2 className="text-[18px] font-semibold text-gray-900">Workload</h2>
+        <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">
+          Print & Design
+        </span>
+      </div>
+    </div>
+  )}
 
-          <div
-            className={`shadow transition-all duration-300 ${
-              isWorkloadFullscreen ? 'rounded-none min-h-screen' : 'bg-white rounded-xl p-4 h-full'
-            }`}
-          >
-            <WorkloadChart fullscreen={isWorkloadFullscreen} />
-          </div>
-        </div>
+  <div
+    className={`transition-all duration-300 ${
+      isWorkloadFullscreen ? 'p-6 min-h-[calc(100vh-64px)] w-screen' : 'bg-white rounded-xl shadow p-4 h-full'
+    }`}
+  >
+    <WorkloadChart fullscreen={isWorkloadFullscreen} />
+  </div>
+</div>
       </div>
     </div>
   );
