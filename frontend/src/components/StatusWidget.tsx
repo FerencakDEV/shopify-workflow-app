@@ -7,6 +7,7 @@ export interface StatusWidgetProps {
   color: string;
   count: number;
   onClick?: () => void;
+  fullscreen?: boolean; // ⬅️ nový prop
 }
 
 export const StatusWidget: React.FC<StatusWidgetProps> = ({
@@ -16,14 +17,19 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
   color,
   count,
   onClick,
+  fullscreen = false,
 }) => {
   return (
     <div
       onClick={onClick}
-      className="flex items-center bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition cursor-pointer min-h-[110px]"
+      className={`flex items-center bg-white rounded-lg shadow-sm hover:shadow-md transition cursor-pointer ${
+        fullscreen ? 'p-6 min-h-[120px]' : 'p-4'
+      }`}
     >
       <div
-        className="h-14 w-14 flex items-center justify-center font-bold text-lg rounded-l-lg"
+        className={`flex items-center justify-center font-bold rounded-l-lg ${
+          fullscreen ? 'h-14 w-14 text-lg' : 'h-12 w-12 text-md'
+        }`}
         style={{
           backgroundColor: color,
           color: getTextColor(color),
@@ -32,9 +38,13 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
         {count}
       </div>
 
-      <div className="ml-5">
-        <div className="text-base font-semibold text-gray-800">{label}</div>
-        <div className="text-sm text-gray-500">{sublabel}</div>
+      <div className="ml-4">
+        <div className={`${fullscreen ? 'text-base' : 'text-sm'} font-semibold text-gray-800`}>
+          {label}
+        </div>
+        <div className={`${fullscreen ? 'text-sm' : 'text-xs'} text-gray-500`}>
+          {sublabel}
+        </div>
       </div>
 
       <div className="ml-auto text-gray-300 hover:text-gray-500">
@@ -47,9 +57,12 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
   );
 };
 
+
 function getTextColor(bgColor: string): string {
   try {
     const hex = bgColor.trim().replace('#', '');
+
+    // HEX farba musí mať 6 znakov
     if (hex.length !== 6) return '#1a1a1a';
 
     const r = parseInt(hex.substring(0, 2), 16);
