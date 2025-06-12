@@ -21,7 +21,7 @@ const WorkloadChart = () => {
   const [workloadData, setWorkloadData] = useState<WorkloadEntry[]>([]);
   const [expandedAssignee, setExpandedAssignee] = useState<string | null>(null);
   const [orders, setOrders] = useState<Record<string, OrderEntry[]>>({});
-  const [fullscreen, setFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,11 +35,7 @@ const WorkloadChart = () => {
     };
 
     fetchData();
-
-    const interval = setInterval(() => {
-      fetchData();
-    }, 10000);
-
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -64,37 +60,43 @@ const WorkloadChart = () => {
   const maxAssigned = Math.max(...workloadData.map((x) => x.assigned), 1);
 
   return (
-    <div className={`relative w-full ${fullscreen ? 'fixed inset-0 bg-white z-50 p-6 overflow-auto' : 'h-full flex flex-col'}`}>
-      {/* Fullscreen button */}
+    <div className={`w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-6 overflow-auto' : 'h-full flex flex-col'}`}>
+      {/* Fullscreen toggle */}
       <button
-        onClick={() => setFullscreen(prev => !prev)}
+        onClick={() => setIsFullscreen(prev => !prev)}
         className="absolute top-4 right-4 z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition"
-        title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+        title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
       >
-        {fullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+        {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
       </button>
 
-      <div className="grid grid-cols-[1fr_2fr_2fr] text-[15px] font-semibold text-gray-600 px-3 pb-3 border-b">
+      <div
+        className={`grid grid-cols-[1fr_2fr_2fr] px-3 pb-3 border-b ${
+          isFullscreen ? 'text-2xl font-bold text-gray-700' : 'text-[15px] font-semibold text-gray-600'
+        }`}
+      >
         <div>Assignee</div>
         <div>Orders in Progress</div>
         <div>Assigned Orders</div>
       </div>
 
       <div className="divide-y flex-grow">
-        {assigneeOrder.map(assignee => {
-          const entry = workloadData.find(x => x.assignee === assignee) || { inProgress: 0, assigned: 0 };
+        {assigneeOrder.map((assignee) => {
+          const entry = workloadData.find((x) => x.assignee === assignee) || { inProgress: 0, assigned: 0 };
 
           return (
             <React.Fragment key={assignee}>
               <div
-                className="grid grid-cols-[1fr_2fr_2fr] items-center px-3 py-3 text-[15px] hover:bg-gray-100 cursor-pointer"
+                className={`grid grid-cols-[1fr_2fr_2fr] items-center px-3 py-4 ${
+                  isFullscreen ? 'text-xl' : 'text-[15px]'
+                } hover:bg-gray-100 cursor-pointer`}
                 onClick={() => toggleAssignee(assignee)}
               >
                 <div className="text-gray-800 font-medium">{assignee}</div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <span className="text-orange-600 font-semibold">{entry.inProgress}</span>
-                  <div className="relative h-3 bg-orange-100 rounded w-full max-w-[180px]">
+                  <div className={`relative ${isFullscreen ? 'h-5' : 'h-3'} bg-orange-100 rounded w-full max-w-[300px]`}>
                     <div
                       className="absolute top-0 left-0 h-full bg-orange-500 rounded"
                       style={{ width: `${(entry.inProgress / maxInProgress) * 100}%` }}
@@ -102,9 +104,9 @@ const WorkloadChart = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <span className="text-gray-600 font-semibold">{entry.assigned}</span>
-                  <div className="relative h-3 bg-gray-200 rounded w-full max-w-[180px]">
+                  <div className={`relative ${isFullscreen ? 'h-5' : 'h-3'} bg-gray-200 rounded w-full max-w-[300px]`}>
                     <div
                       className="absolute top-0 left-0 h-full bg-gray-700 rounded"
                       style={{ width: `${(entry.assigned / maxAssigned) * 100}%` }}
@@ -115,7 +117,7 @@ const WorkloadChart = () => {
 
               {expandedAssignee === assignee && (
                 <div className="px-3 py-2 bg-gray-50">
-                  <table className="w-full text-sm">
+                  <table className={`w-full ${isFullscreen ? 'text-lg' : 'text-sm'}`}>
                     <thead>
                       <tr className="text-left text-gray-500 font-semibold border-b">
                         <th className="py-1">Order #</th>
@@ -128,30 +130,24 @@ const WorkloadChart = () => {
                     <tbody>
                       {orders[assignee]
                         ?.sort((a, b) => {
-                          const aHasInProgress = a.progress?.some(p => String(p).toLowerCase() === 'in progress') ?? false;
-                          const bHasInProgress = b.progress?.some(p => String(p).toLowerCase() === 'in progress') ?? false;
+                          const aHasInProgress = a.progress?.includes('In Progress') ?? false;
+                          const bHasInProgress = b.progress?.includes('In Progress') ?? false;
                           return (bHasInProgress ? 1 : 0) - (aHasInProgress ? 1 : 0);
                         })
-                        .map(order => {
-                          const assigneeList = order.assignees ?? [];
-                          const progressList = order.progress ?? [];
-
-                          const isInProgress = progressList.some(p => String(p).toLowerCase() === 'in progress');
-                          const isAssigned = progressList.some(p => String(p).toLowerCase() === 'assigned');
-
-                          const rowClass = isInProgress
+                        .map((order) => {
+                          const rowClass = order.progress?.includes('In Progress')
                             ? 'bg-orange-100 text-orange-600'
-                            : isAssigned
-                              ? 'bg-gray-200 text-gray-700'
-                              : '';
+                            : order.progress?.includes('Assigned')
+                            ? 'bg-gray-200 text-gray-700'
+                            : '';
 
                           return (
                             <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
                               <td className="py-1">{order.order_number}</td>
                               <td>{order.custom_status}</td>
                               <td>{order.fulfillment_status}</td>
-                              <td>{assigneeList.join(', ')}</td>
-                              <td>{progressList.join(', ')}</td>
+                              <td>{order.assignees?.join(', ')}</td>
+                              <td>{order.progress?.join(', ')}</td>
                             </tr>
                           );
                         })}
