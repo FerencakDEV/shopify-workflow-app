@@ -105,12 +105,15 @@ const Home = () => {
           </div>
 
           <div
-            className={`grid transition-all duration-300 w-full ${
-              isFullscreen
-                ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-0 min-h-screen'
-                : 'grid-rows-5 grid-cols-2 gap-4'
-            }`}
-          >
+  className={`grid transition-all duration-300 w-full ${
+    isFullscreen
+      ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-0'
+      : 'grid-rows-5 grid-cols-2 gap-4'
+  }`}
+  style={{
+    height: isFullscreen ? 'calc(100vh - 64px)' : 'auto', // odrátané top UI (~64px)
+  }}
+>
             {statusWidgets.map((widget) => (
               <StatusWidget
                 key={widget.key}
