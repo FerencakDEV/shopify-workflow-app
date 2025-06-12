@@ -36,12 +36,10 @@ const Home = () => {
   const [counts, setCounts] = useState<Counts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [isOrdersFullscreen, setIsOrdersFullscreen] = useState(false);
   const [isWorkloadFullscreen, setIsWorkloadFullscreen] = useState(false);
 
   const navigate = useNavigate();
-
   const ordersRef = useRef<HTMLDivElement>(null);
   const workloadRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +69,11 @@ const Home = () => {
 
     if (!isActive && ref) {
       await ref.requestFullscreen?.();
-      type === 'orders' ? setIsOrdersFullscreen(true) : setIsWorkloadFullscreen(true);
+      if (type === 'orders') {
+        setIsOrdersFullscreen(true);
+      } else {
+        setIsWorkloadFullscreen(true);
+      }
     } else {
       await document.exitFullscreen?.();
       setIsOrdersFullscreen(false);
@@ -100,7 +102,6 @@ const Home = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Orders */}
         <div ref={ordersRef} className={isOrdersFullscreen ? 'lg:col-span-12' : 'lg:col-span-5 relative'}>
-          {/* Fullscreen Button for Orders */}
           <button
             onClick={() => toggleFullscreen('orders')}
             className="absolute top-0 right-0 z-10 p-2 text-gray-600 hover:text-black"
@@ -144,14 +145,15 @@ const Home = () => {
         {/* Workload */}
         <div
           ref={workloadRef}
-          className={`relative ${isOrdersFullscreen ? 'hidden' : 'lg:col-span-7 flex flex-col h-full'}`}
+          className={`relative ${isOrdersFullscreen ? 'hidden' : isWorkloadFullscreen ? 'fixed inset-0 z-50 bg-white p-6 overflow-auto' : 'lg:col-span-7 flex flex-col h-full'}`}
         >
-          {/* Fullscreen Button for Workload */}
+          {/* Fullscreen toggle */}
           <button
             onClick={() => toggleFullscreen('workload')}
-            className="absolute top-0 right-0 z-10 p-2 text-gray-600 hover:text-black"
+            className="absolute top-0 right-0 z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition"
+            title={isWorkloadFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           >
-            {isWorkloadFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            {isWorkloadFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
           </button>
 
           {!isWorkloadFullscreen && (
@@ -166,11 +168,11 @@ const Home = () => {
           )}
 
           <div
-            className={`bg-white shadow transition-all duration-300 ${
-              isWorkloadFullscreen ? 'p-8 rounded-none h-screen' : 'rounded-xl p-4 h-full'
+            className={`shadow transition-all duration-300 ${
+              isWorkloadFullscreen ? 'rounded-none min-h-screen' : 'bg-white rounded-xl p-4 h-full'
             }`}
           >
-            
+            <WorkloadChart fullscreen={isWorkloadFullscreen} />
           </div>
         </div>
       </div>

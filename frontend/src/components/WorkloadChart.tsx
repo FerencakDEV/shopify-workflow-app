@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Maximize2, Minimize2 } from 'lucide-react';
 
 interface WorkloadEntry {
   assignee: string;
@@ -15,13 +14,16 @@ interface OrderEntry {
   progress?: string[];
 }
 
+interface WorkloadChartProps {
+  fullscreen?: boolean;
+}
+
 const assigneeOrder = ['Q1', 'Q2', 'Online', 'Thesis', 'Design', 'Design 2', 'MagicTouch', 'Posters'];
 
-const WorkloadChart = () => {
+const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => {
   const [workloadData, setWorkloadData] = useState<WorkloadEntry[]>([]);
   const [expandedAssignee, setExpandedAssignee] = useState<string | null>(null);
   const [orders, setOrders] = useState<Record<string, OrderEntry[]>>({});
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,19 +62,10 @@ const WorkloadChart = () => {
   const maxAssigned = Math.max(...workloadData.map((x) => x.assigned), 1);
 
   return (
-    <div className={`w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-6 overflow-auto' : 'h-full flex flex-col'}`}>
-      {/* Fullscreen toggle */}
-      <button
-        onClick={() => setIsFullscreen(prev => !prev)}
-        className="absolute top-4 right-4 z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition"
-        title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-      >
-        {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
-      </button>
-
+    <div className={`w-full ${fullscreen ? 'fixed inset-0 z-50 bg-white p-6 overflow-auto' : 'h-full flex flex-col'}`}>
       <div
         className={`grid grid-cols-[1fr_2fr_2fr] px-3 pb-3 border-b ${
-          isFullscreen ? 'text-2xl font-bold text-gray-700' : 'text-[15px] font-semibold text-gray-600'
+          fullscreen ? 'text-2xl font-bold text-gray-700' : 'text-[15px] font-semibold text-gray-600'
         }`}
       >
         <div>Assignee</div>
@@ -88,25 +81,23 @@ const WorkloadChart = () => {
             <React.Fragment key={assignee}>
               <div
                 className={`grid grid-cols-[1fr_2fr_2fr] items-center px-3 py-4 ${
-                  isFullscreen ? 'text-xl' : 'text-[15px]'
+                  fullscreen ? 'text-xl' : 'text-[15px]'
                 } hover:bg-gray-100 cursor-pointer`}
                 onClick={() => toggleAssignee(assignee)}
               >
                 <div className="text-gray-800 font-medium">{assignee}</div>
-
                 <div className="flex items-center gap-3">
                   <span className="text-orange-600 font-semibold">{entry.inProgress}</span>
-                  <div className={`relative ${isFullscreen ? 'h-5' : 'h-3'} bg-orange-100 rounded w-full max-w-[300px]`}>
+                  <div className={`relative ${fullscreen ? 'h-5' : 'h-3'} bg-orange-100 rounded w-full max-w-[300px]`}>
                     <div
                       className="absolute top-0 left-0 h-full bg-orange-500 rounded"
                       style={{ width: `${(entry.inProgress / maxInProgress) * 100}%` }}
                     />
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3">
                   <span className="text-gray-600 font-semibold">{entry.assigned}</span>
-                  <div className={`relative ${isFullscreen ? 'h-5' : 'h-3'} bg-gray-200 rounded w-full max-w-[300px]`}>
+                  <div className={`relative ${fullscreen ? 'h-5' : 'h-3'} bg-gray-200 rounded w-full max-w-[300px]`}>
                     <div
                       className="absolute top-0 left-0 h-full bg-gray-700 rounded"
                       style={{ width: `${(entry.assigned / maxAssigned) * 100}%` }}
@@ -117,7 +108,7 @@ const WorkloadChart = () => {
 
               {expandedAssignee === assignee && (
                 <div className="px-3 py-2 bg-gray-50">
-                  <table className={`w-full ${isFullscreen ? 'text-lg' : 'text-sm'}`}>
+                  <table className={`w-full ${fullscreen ? 'text-lg' : 'text-sm'}`}>
                     <thead>
                       <tr className="text-left text-gray-500 font-semibold border-b">
                         <th className="py-1">Order #</th>
