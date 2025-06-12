@@ -86,31 +86,38 @@ const Home = () => {
   ];
 
   return (
-    <div className="p-6 space-y-8">
+    <div className={`relative ${isFullscreen ? 'p-0 space-y-0' : 'p-6 space-y-8'}`}>
+      {/* Fullscreen Icon */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-4 right-4 z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition"
+        title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+      >
+        {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+      </button>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Orders */}
         <div className={isFullscreen ? 'lg:col-span-12' : 'lg:col-span-5'}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[18px] font-semibold text-gray-900">Orders</h2>
-              <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">By Status</span>
+          {!isFullscreen && (
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[18px] font-semibold text-gray-900">Orders</h2>
+                <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">
+                  By Status
+                </span>
+              </div>
             </div>
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 rounded hover:bg-gray-100 transition"
-              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            >
-              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </button>
-          </div>
+          )}
 
-<div
-  className={`grid w-full transition-all duration-300 ${
-    isFullscreen
-      ? 'grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 min-h-[calc(90vh-64px)]'
-      : 'grid-rows-5 grid-cols-2 gap-4'
-  }`}
->      {statusWidgets.map((widget) => (
+          <div
+            className={`grid w-full transition-all duration-300 ${
+              isFullscreen
+                ? 'grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 min-h-[calc(90vh-64px)]'
+                : 'grid-rows-5 grid-cols-2 gap-4'
+            }`}
+          >
+            {statusWidgets.map((widget) => (
               <StatusWidget
                 key={widget.key}
                 statusKey={widget.key}
@@ -125,13 +132,15 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Workload - show only if NOT fullscreen */}
+        {/* Workload (hidden in fullscreen) */}
         {!isFullscreen && (
           <div className="lg:col-span-7 flex flex-col h-full">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <h2 className="text-[18px] font-semibold text-gray-900">Workload</h2>
-                <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">Print & Design</span>
+                <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">
+                  Print & Design
+                </span>
               </div>
             </div>
 
