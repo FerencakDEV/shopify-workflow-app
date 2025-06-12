@@ -107,7 +107,7 @@ const Home = () => {
 <div
   className={`grid w-full transition-all duration-300 ${
     isFullscreen
-      ? 'grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 min-h-[calc(100vh-64px)]'
+      ? 'grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 min-h-[calc(90vh-64px)]'
       : 'grid-rows-5 grid-cols-2 gap-4'
   }`}
 >      {statusWidgets.map((widget) => (

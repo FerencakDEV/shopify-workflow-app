@@ -24,14 +24,17 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
       onClick={onClick}
       className={`w-full h-full bg-white shadow-sm hover:shadow-md transition cursor-pointer ${
         fullscreen
-          ? 'flex flex-col items-center justify-center text-center p-6'
-          : 'flex items-center p-4 rounded-lg'
+          ? 'flex flex-col items-center justify-center text-center p-4'
+          : 'flex items-center rounded-lg p-4'
       }`}
+      style={{
+        minHeight: fullscreen ? '240px' : undefined, // menej ako predtým
+      }}
     >
       <div
         className={`flex items-center justify-center font-bold rounded-lg ${
           fullscreen
-            ? 'h-[6rem] w-[6rem] text-[2.5rem] mb-4'
+            ? 'h-[5rem] w-[5rem] text-[2.2rem] mb-3'
             : 'h-12 w-12 text-md rounded-l-lg'
         }`}
         style={{
@@ -45,13 +48,15 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
       <div className={fullscreen ? '' : 'ml-4'}>
         <div
           className={`font-semibold text-gray-800 ${
-            fullscreen ? 'text-[1.8rem] leading-tight' : 'text-sm'
+            fullscreen ? 'text-[1.6rem] leading-tight' : 'text-sm'
           }`}
         >
           {label}
         </div>
         <div
-          className={`text-gray-500 ${fullscreen ? 'text-lg mt-1' : 'text-xs'}`}
+          className={`text-gray-500 ${
+            fullscreen ? 'text-[1.1rem] mt-1' : 'text-xs'
+          }`}
         >
           {sublabel}
         </div>
