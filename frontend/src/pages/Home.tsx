@@ -110,7 +110,7 @@ const Home = () => {
       ? 'grid-cols-2 grid-rows-5 gap-[1px] bg-gray-200 min-h-[calc(100vh-64px)]'
       : 'grid-rows-5 grid-cols-2 gap-4'
   }`}
->        {statusWidgets.map((widget) => (
+>       {statusWidgets.map((widget) => (
               <StatusWidget
                 key={widget.key}
                 statusKey={widget.key}
