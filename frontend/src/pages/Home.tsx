@@ -106,9 +106,10 @@ const Home = () => {
 
           <div className="bg-white rounded-xl shadow p-4 h-full">
            <div
-  className={`grid gap-4 transition-all duration-300 ${
-    isFullscreen ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr' : 'grid-rows-5 grid-cols-2'
+  className={`grid gap-6 transition-all duration-300 ${
+    isFullscreen ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 auto-rows-fr' : 'grid-rows-5 grid-cols-2'
   }`}
+
 >
 
               {statusWidgets.map((widget) => (

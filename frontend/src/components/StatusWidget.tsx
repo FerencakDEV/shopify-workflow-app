@@ -21,39 +21,35 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
 }) => {
   return (
     <div
-      onClick={onClick}
-      className={`flex items-center bg-white rounded-lg shadow-sm hover:shadow-md transition cursor-pointer ${
-        fullscreen ? 'p-6 min-h-[120px]' : 'p-4'
-      }`}
-    >
-      <div
-        className={`flex items-center justify-center font-bold rounded-l-lg ${
-          fullscreen ? 'h-14 w-14 text-lg' : 'h-12 w-12 text-md'
-        }`}
-        style={{
-          backgroundColor: color,
-          color: getTextColor(color),
-        }}
-      >
-        {count}
-      </div>
+  onClick={onClick}
+  className={`flex items-center bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer
+    p-4 sm:p-5 md:p-6 xl:p-8
+    min-h-[110px] sm:min-h-[130px] md:min-h-[160px] xl:min-h-[200px]
+  `}
+>
+  <div
+    className={`
+      flex items-center justify-center font-bold rounded-l-lg
+      h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 xl:h-20 xl:w-20
+      text-md sm:text-lg md:text-xl xl:text-2xl
+    `}
+    style={{ backgroundColor: color, color: getTextColor(color) }}
+  >
+    {count}
+  </div>
 
-      <div className="ml-4">
-        <div className={`${fullscreen ? 'text-base' : 'text-sm'} font-semibold text-gray-800`}>
-          {label}
-        </div>
-        <div className={`${fullscreen ? 'text-sm' : 'text-xs'} text-gray-500`}>
-          {sublabel}
-        </div>
-      </div>
+  <div className="ml-4">
+    <div className="font-semibold text-gray-800 text-sm sm:text-base md:text-lg xl:text-xl">{label}</div>
+    <div className="text-gray-500 text-xs sm:text-sm md:text-base">{sublabel}</div>
+  </div>
 
-      <div className="ml-auto text-gray-300 hover:text-gray-500">
-        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M10 3C5.454 3 1.85 6.196 1.116 10c.734 3.804 4.338 7 8.884 7s8.15-3.196 8.884-7c-.734-3.804-4.338-7-8.884-7zm0 12a5 5 0 110-10 5 5 0 010 10z" />
-          <path d="M10 7a3 3 0 100 6 3 3 0 000-6z" />
-        </svg>
-      </div>
-    </div>
+  <div className="ml-auto text-gray-300 hover:text-gray-500 hidden xl:block">
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M10 3C5.454 3 1.85 6.196 1.116 10c.734 3.804 4.338 7 8.884 7s8.15-3.196 8.884-7c-.734-3.804-4.338-7-8.884-7zm0 12a5 5 0 110-10 5 5 0 010 10z" />
+      <path d="M10 7a3 3 0 100 6 3 3 0 000-6z" />
+    </svg>
+  </div>
+</div>
   );
 };
 
