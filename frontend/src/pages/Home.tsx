@@ -23,7 +23,7 @@ const slugMap: Record<string, string> = {
   urgentNewOrders: 'urgent-new-orders',
   assignedOrders: 'assigned-orders',
   inProgress: 'in-progress',
-  printedDone: 'printed-done', // môžeš zmazať
+  printedDone: 'printed-done',
   finishingBinding: 'finishing-binding',
   toBeChecked: 'to-be-checked',
   onHold: 'on-hold',
@@ -44,7 +44,6 @@ const Home = () => {
       try {
         const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/dashboard/status-counts');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
         const resData: { counts: Counts } = await res.json();
         setCounts(resData.counts);
         setError(null);
@@ -90,7 +89,7 @@ const Home = () => {
     <div className="p-6 space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Orders */}
-        <div className="lg:col-span-5 flex flex-col h-full">
+        <div className={isFullscreen ? 'lg:col-span-12' : 'lg:col-span-5'}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-semibold text-gray-900">Orders</h2>
@@ -122,19 +121,21 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Workload */}
-        <div className="lg:col-span-7 flex flex-col h-full">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[18px] font-semibold text-gray-900">Workload</h2>
-              <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">Print & Design</span>
+        {/* Workload - show only if NOT fullscreen */}
+        {!isFullscreen && (
+          <div className="lg:col-span-7 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[18px] font-semibold text-gray-900">Workload</h2>
+                <span className="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded">Print & Design</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow p-4 h-full">
+              <WorkloadChart />
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow p-4 h-full">
-            <WorkloadChart />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
