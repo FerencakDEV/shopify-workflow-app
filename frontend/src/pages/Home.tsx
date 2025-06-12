@@ -170,7 +170,7 @@ const Home = () => {
               isWorkloadFullscreen ? 'p-8 rounded-none h-screen' : 'rounded-xl p-4 h-full'
             }`}
           >
-            <WorkloadChart />
+            
           </div>
         </div>
       </div>
