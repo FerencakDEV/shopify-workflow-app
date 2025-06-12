@@ -1,7 +1,7 @@
 import React from 'react';
 
 export interface StatusWidgetProps {
-  statusKey: string; // e.g., "newOrders"
+  statusKey: string;
   label: string;
   sublabel: string;
   color: string;
@@ -20,10 +20,10 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
   return (
     <div
       onClick={onClick}
-      className="flex items-center bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-pointer"
+      className="flex items-center bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition cursor-pointer min-h-[110px]"
     >
       <div
-        className="h-12 w-12 flex items-center justify-center font-bold text-md rounded-l-lg"
+        className="h-14 w-14 flex items-center justify-center font-bold text-lg rounded-l-lg"
         style={{
           backgroundColor: color,
           color: getTextColor(color),
@@ -32,9 +32,9 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
         {count}
       </div>
 
-      <div className="ml-4">
-        <div className="text-sm font-semibold text-gray-800">{label}</div>
-        <div className="text-xs text-gray-500">{sublabel}</div>
+      <div className="ml-5">
+        <div className="text-base font-semibold text-gray-800">{label}</div>
+        <div className="text-sm text-gray-500">{sublabel}</div>
       </div>
 
       <div className="ml-auto text-gray-300 hover:text-gray-500">
@@ -50,8 +50,6 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
 function getTextColor(bgColor: string): string {
   try {
     const hex = bgColor.trim().replace('#', '');
-
-    // HEX farba musí mať 6 znakov
     if (hex.length !== 6) return '#1a1a1a';
 
     const r = parseInt(hex.substring(0, 2), 16);
