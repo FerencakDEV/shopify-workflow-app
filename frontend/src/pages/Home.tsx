@@ -104,27 +104,25 @@ const Home = () => {
             </button>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-4 h-full">
-           <div
-  className={`grid gap-6 transition-all duration-300 ${
-    isFullscreen ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 auto-rows-fr' : 'grid-rows-5 grid-cols-2'
-  }`}
-
->
-
-              {statusWidgets.map((widget) => (
-                <StatusWidget
-  key={widget.key}
-  statusKey={widget.key}
-  label={widget.label}
-  sublabel={widget.sub}
-  color={widget.color}
-  count={counts?.[widget.key as keyof Counts] ?? 0}
-  onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
-  fullscreen={isFullscreen}
-/>
-              ))}
-            </div>
+          <div
+            className={`grid transition-all duration-300 w-full ${
+              isFullscreen
+                ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-0 min-h-screen'
+                : 'grid-rows-5 grid-cols-2 gap-4'
+            }`}
+          >
+            {statusWidgets.map((widget) => (
+              <StatusWidget
+                key={widget.key}
+                statusKey={widget.key}
+                label={widget.label}
+                sublabel={widget.sub}
+                color={widget.color}
+                count={counts?.[widget.key as keyof Counts] ?? 0}
+                onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
+                fullscreen={isFullscreen}
+              />
+            ))}
           </div>
         </div>
 
