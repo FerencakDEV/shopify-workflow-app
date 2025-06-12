@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 interface WorkloadEntry {
   assignee: string;
@@ -20,27 +21,27 @@ const WorkloadChart = () => {
   const [workloadData, setWorkloadData] = useState<WorkloadEntry[]>([]);
   const [expandedAssignee, setExpandedAssignee] = useState<string | null>(null);
   const [orders, setOrders] = useState<Record<string, OrderEntry[]>>({});
+  const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/orders/by-assignee-summary');
-      const json = await res.json();
-      setWorkloadData(json.data);
-    } catch (error) {
-      console.error('Error fetching workload data:', error);
-    }
-  };
+    const fetchData = async () => {
+      try {
+        const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/orders/by-assignee-summary');
+        const json = await res.json();
+        setWorkloadData(json.data);
+      } catch (error) {
+        console.error('Error fetching workload data:', error);
+      }
+    };
 
-  fetchData(); // prvé načítanie
-
-  const interval = setInterval(() => {
-    console.log('🔁 Auto-refreshing workload data...');
     fetchData();
-  }, 10000); // ⏱️ každých 30 sekúnd
 
-  return () => clearInterval(interval); // 🧹 cleanup
-}, []);
+    const interval = setInterval(() => {
+      fetchData();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const toggleAssignee = async (assignee: string) => {
     if (expandedAssignee === assignee) {
@@ -63,7 +64,16 @@ const WorkloadChart = () => {
   const maxAssigned = Math.max(...workloadData.map((x) => x.assigned), 1);
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className={`relative w-full ${fullscreen ? 'fixed inset-0 bg-white z-50 p-6 overflow-auto' : 'h-full flex flex-col'}`}>
+      {/* Fullscreen button */}
+      <button
+        onClick={() => setFullscreen(prev => !prev)}
+        className="absolute top-4 right-4 z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition"
+        title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+      >
+        {fullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+      </button>
+
       <div className="grid grid-cols-[1fr_2fr_2fr] text-[15px] font-semibold text-gray-600 px-3 pb-3 border-b">
         <div>Assignee</div>
         <div>Orders in Progress</div>
@@ -132,8 +142,8 @@ const WorkloadChart = () => {
                           const rowClass = isInProgress
                             ? 'bg-orange-100 text-orange-600'
                             : isAssigned
-                            ? 'bg-gray-200 text-gray-700'
-                            : '';
+                              ? 'bg-gray-200 text-gray-700'
+                              : '';
 
                           return (
                             <tr key={order.order_number} className={`border-b hover:bg-gray-100 ${rowClass}`}>
