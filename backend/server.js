@@ -15,7 +15,7 @@ const app = express();
 
 // ✅ CORS (musí byť pred všetkými routes)
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://shopify-workflow-app-frontend.onrender.com'],
+  origin: ['http://localhost:3000', 'https://shopify-workflow-app-frontend.onrender.com','https://workflow.readshub.ie'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
