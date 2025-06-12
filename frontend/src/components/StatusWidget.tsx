@@ -22,16 +22,18 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`flex w-full h-full bg-white cursor-pointer shadow-sm hover:shadow-md transition
-        ${fullscreen
-          ? 'flex-col justify-center items-center text-center rounded-none p-10'
-          : 'flex-row items-center rounded-lg p-4'}
-      `}
+      className={`w-full h-full bg-white shadow-sm hover:shadow-md transition cursor-pointer ${
+        fullscreen
+          ? 'flex flex-col items-center justify-center text-center p-6'
+          : 'flex items-center p-4 rounded-lg'
+      }`}
     >
       <div
-        className={`flex items-center justify-center font-bold rounded-lg
-          ${fullscreen ? 'h-20 w-20 text-3xl mb-4' : 'h-12 w-12 text-md'}
-        `}
+        className={`flex items-center justify-center font-bold rounded-lg ${
+          fullscreen
+            ? 'h-[6rem] w-[6rem] text-[2.5rem] mb-4'
+            : 'h-12 w-12 text-md rounded-l-lg'
+        }`}
         style={{
           backgroundColor: color,
           color: getTextColor(color),
@@ -40,11 +42,17 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
         {count}
       </div>
 
-      <div className={fullscreen ? '' : 'ml-6'}>
-        <div className={`${fullscreen ? 'text-2xl' : 'text-sm'} font-semibold text-gray-800`}>
+      <div className={fullscreen ? '' : 'ml-4'}>
+        <div
+          className={`font-semibold text-gray-800 ${
+            fullscreen ? 'text-[1.8rem] leading-tight' : 'text-sm'
+          }`}
+        >
           {label}
         </div>
-        <div className={`${fullscreen ? 'text-lg' : 'text-xs'} text-gray-500`}>
+        <div
+          className={`text-gray-500 ${fullscreen ? 'text-lg mt-1' : 'text-xs'}`}
+        >
           {sublabel}
         </div>
       </div>
