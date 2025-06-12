@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { StatusWidget } from '../components/StatusWidget';
@@ -36,8 +36,14 @@ const Home = () => {
   const [counts, setCounts] = useState<Counts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const [isOrdersFullscreen, setIsOrdersFullscreen] = useState(false);
+  const [isWorkloadFullscreen, setIsWorkloadFullscreen] = useState(false);
+
   const navigate = useNavigate();
+
+  const ordersRef = useRef<HTMLDivElement>(null);
+  const workloadRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -59,14 +65,18 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleFullscreen = () => {
-    const elem = document.documentElement;
-    if (!isFullscreen) {
-      if (elem.requestFullscreen) elem.requestFullscreen();
+  const toggleFullscreen = async (type: 'orders' | 'workload') => {
+    const ref = type === 'orders' ? ordersRef.current : workloadRef.current;
+    const isActive = document.fullscreenElement;
+
+    if (!isActive && ref) {
+      await ref.requestFullscreen?.();
+      type === 'orders' ? setIsOrdersFullscreen(true) : setIsWorkloadFullscreen(true);
     } else {
-      if (document.exitFullscreen) document.exitFullscreen();
+      await document.exitFullscreen?.();
+      setIsOrdersFullscreen(false);
+      setIsWorkloadFullscreen(false);
     }
-    setIsFullscreen(!isFullscreen);
   };
 
   if (loading) return <div className="p-6 text-sm">Loading dashboard...</div>;
@@ -86,20 +96,19 @@ const Home = () => {
   ];
 
   return (
-    <div className={`relative ${isFullscreen ? 'p-0 space-y-0' : 'p-6 space-y-8'}`}>
-      {/* Fullscreen Icon */}
-      <button
-        onClick={toggleFullscreen}
-        className="absolute top-4 right-4 z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition"
-        title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-      >
-        {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
-      </button>
-
+    <div className="p-6 space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Orders */}
-        <div className={isFullscreen ? 'lg:col-span-12' : 'lg:col-span-5'}>
-          {!isFullscreen && (
+        <div ref={ordersRef} className={isOrdersFullscreen ? 'lg:col-span-12' : 'lg:col-span-5 relative'}>
+          {/* Fullscreen Button for Orders */}
+          <button
+            onClick={() => toggleFullscreen('orders')}
+            className="absolute top-0 right-0 z-10 p-2 text-gray-600 hover:text-black"
+          >
+            {isOrdersFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+          </button>
+
+          {!isOrdersFullscreen && (
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <h2 className="text-[18px] font-semibold text-gray-900">Orders</h2>
@@ -112,7 +121,7 @@ const Home = () => {
 
           <div
             className={`grid w-full transition-all duration-300 ${
-              isFullscreen
+              isOrdersFullscreen
                 ? 'grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 min-h-[calc(90vh-64px)]'
                 : 'grid-rows-5 grid-cols-2 gap-4'
             }`}
@@ -126,15 +135,26 @@ const Home = () => {
                 color={widget.color}
                 count={counts?.[widget.key as keyof Counts] ?? 0}
                 onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
-                fullscreen={isFullscreen}
+                fullscreen={isOrdersFullscreen}
               />
             ))}
           </div>
         </div>
 
-        {/* Workload (hidden in fullscreen) */}
-        {!isFullscreen && (
-          <div className="lg:col-span-7 flex flex-col h-full">
+        {/* Workload */}
+        <div
+          ref={workloadRef}
+          className={`relative ${isOrdersFullscreen ? 'hidden' : 'lg:col-span-7 flex flex-col h-full'}`}
+        >
+          {/* Fullscreen Button for Workload */}
+          <button
+            onClick={() => toggleFullscreen('workload')}
+            className="absolute top-0 right-0 z-10 p-2 text-gray-600 hover:text-black"
+          >
+            {isWorkloadFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+          </button>
+
+          {!isWorkloadFullscreen && (
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <h2 className="text-[18px] font-semibold text-gray-900">Workload</h2>
@@ -143,12 +163,16 @@ const Home = () => {
                 </span>
               </div>
             </div>
+          )}
 
-            <div className="bg-white rounded-xl shadow p-4 h-full">
-              <WorkloadChart />
-            </div>
+          <div
+            className={`bg-white shadow transition-all duration-300 ${
+              isWorkloadFullscreen ? 'p-8 rounded-none h-screen' : 'rounded-xl p-4 h-full'
+            }`}
+          >
+            <WorkloadChart />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
