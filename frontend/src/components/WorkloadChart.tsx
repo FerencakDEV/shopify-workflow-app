@@ -81,11 +81,11 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => 
           return (
             <React.Fragment key={assignee}>
               <div
-                className={`grid grid-cols-[1fr_2fr_2fr] items-center px-3 py-4 ${
-                  fullscreen ? 'text-xl' : 'text-[15px]'
-                } hover:bg-gray-100 cursor-pointer`}
-                onClick={() => toggleAssignee(assignee)}
-              >
+  className={`grid grid-cols-[1fr_2fr_2fr] items-center px-3 ${
+    fullscreen ? 'py-[6px] text-[15px] leading-tight' : 'py-4 text-[15px]'
+  } hover:bg-gray-100 cursor-pointer`}
+  onClick={() => toggleAssignee(assignee)}
+>
                 <div className="text-gray-800 font-medium">{assignee}</div>
                 <div className="flex items-center gap-3">
                   <span className="text-orange-600 font-semibold">{entry.inProgress}</span>
