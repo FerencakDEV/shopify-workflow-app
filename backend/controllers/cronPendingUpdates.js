@@ -1,65 +1,77 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
-const axios = require('axios');
-const Order = require('../models/Order');
-const PendingUpdate = require('../models/PendingUpdate');
-const { cleanOrder } = require('../controllers/cleanOrder');
-const { SHOPIFY_API_URL, HEADERS } = require('../config/constants');
+const MAX_PAGES = 4;
+const LIMIT = 250;
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const runCronSync = async () => {
+  console.log('🔧 CRON štartuje...');
+  const added = [], updated = [], unchanged = [];
 
-const fetchOrder = async (id) => {
   try {
-    const res = await axios.get(`${SHOPIFY_API_URL}/orders/${id}.json`, { headers: HEADERS });
-    return res.data.order;
-  } catch {
-    return null;
-  }
-};
+    let nextUrl = `${SHOPIFY_API_URL}/orders.json?limit=${LIMIT}&status=any&order=created_at desc`;
 
-const fetchMetafields = async (id) => {
-  try {
-    const res = await axios.get(`${SHOPIFY_API_URL}/orders/${id}/metafields.json`, { headers: HEADERS });
-    return res.data.metafields || [];
-  } catch {
-    return [];
-  }
-};
+    for (let page = 0; page < MAX_PAGES && nextUrl; page++) {
+      const response = await axios.get(nextUrl, { headers: HEADERS });
+      const orders = response.data.orders;
 
-const processPendingUpdates = async () => {
-  const pending = await PendingUpdate.find({});
-  console.log(`🔁 Spracovávam ${pending.length} pending webhookov`);
+      for (const order of orders) {
+        const existing = await Order.findOne({ id: Number(order.id) });
+        await delay(300);
 
-  for (const entry of pending) {
-    const { orderId } = entry;
-    const fullOrder = await fetchOrder(orderId);
-    const metafields = await fetchMetafields(orderId);
+        const metafields = await fetchMetafields(order.id);
+        const cleaned = cleanOrder(order, metafields);
 
-    if (!fullOrder || metafields.length === 0) {
-      console.log(`⚠️ Order ${orderId} stále bez dát`);
-      continue;
+        if (!cleaned.fulfillment_status || cleaned.fulfillment_status === 'null') {
+          const status = cleaned.custom_status?.toLowerCase() || '';
+          if (status.includes('cancelled')) cleaned.fulfillment_status = 'fulfilled';
+          else if (status.includes('ready for pickup')) cleaned.fulfillment_status = 'ready for pickup';
+          else if (status.includes('on hold')) cleaned.fulfillment_status = 'on hold';
+          else cleaned.fulfillment_status = 'unfulfilled';
+        }
+
+        if (!existing) {
+          await Order.create(cleaned);
+          added.push(cleaned.order_number || cleaned.id);
+          console.log(`✅ Pridaná NOVÁ objednávka: ${cleaned.order_number}`);
+        } else {
+          const changed =
+            JSON.stringify(existing.assignee) !== JSON.stringify(cleaned.assignee) ||
+            JSON.stringify(existing.progress) !== JSON.stringify(cleaned.progress) ||
+            existing.order_number !== cleaned.order_number ||
+            existing.fulfillment_status !== cleaned.fulfillment_status ||
+            existing.custom_status !== cleaned.custom_status;
+
+          if (changed) {
+            await Order.updateOne({ id: order.id }, { $set: cleaned });
+            updated.push(cleaned.order_number || cleaned.id);
+            console.log(`🔄 Aktualizovaná objednávka: ${cleaned.order_number}`);
+          } else {
+            unchanged.push(cleaned.order_number || cleaned.id);
+          }
+        }
+      }
+
+      // pagination - Shopify API provides `link` header
+      const linkHeader = response.headers.link;
+      if (linkHeader) {
+        const match = linkHeader.match(/<([^>]+)>; rel="next"/);
+        nextUrl = match ? match[1] : null;
+      } else {
+        nextUrl = null;
+      }
     }
 
-    const cleaned = cleanOrder(fullOrder, metafields);
-    const existing = await Order.findOne({ id: cleaned.id });
+    await CronLog.create({
+      timestamp: new Date(),
+      added,
+      updated,
+      unchanged,
+      runBy: 'render-cron',
+    });
 
-    if (!existing) {
-      await Order.create(cleaned);
-      console.log(`✅ Vytvorená nová objednávka ${cleaned.id} cez pending cron`);
-    } else {
-      await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
-      console.log(`🔄 Updatnutá objednávka ${cleaned.id} cez pending cron`);
-    }
-
-    // ✅ Zmaž zo zásobníka
-    await PendingUpdate.deleteOne({ orderId });
+    console.log(`\n📊 Súhrn CRON:`)
+    console.log(`➕ Pridané: ${added.length}`);
+    console.log(`🔄 Aktualizované: ${updated.length}`);
+    console.log(`⏭️ Nezmenené: ${unchanged.length}`);
+  } catch (err) {
+    console.error('❌ Chyba CRON behu:', err.message);
   }
 };
-
-if (require.main === module) {
-  mongoose.connect(process.env.MONGO_URI).then(async () => {
-    await processPendingUpdates();
-    mongoose.connection.close();
-  });
-}
-
