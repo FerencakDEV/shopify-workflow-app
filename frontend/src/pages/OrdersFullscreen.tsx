@@ -46,7 +46,6 @@ const statusWidgets = [
 
 const OrdersFullscreen = () => {
   const [counts, setCounts] = useState<Counts | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -55,13 +54,11 @@ const OrdersFullscreen = () => {
       try {
         const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/dashboard/status-counts');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const data = await res.json();
-        setCounts(data.counts);
+        const resData = await res.json();
+        console.log('✅ counts:', resData);
+        setCounts(resData.counts);
       } catch (err: any) {
-        console.error('❌ Error loading counts:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        setError(err.message || 'Failed to fetch counts');
       }
     };
 
@@ -77,10 +74,11 @@ const OrdersFullscreen = () => {
       </div>
 
       <div className="flex-grow px-6 py-4">
-        {loading && <p className="text-sm">Loading...</p>}
-        {error && <p className="text-sm text-red-600">Error: {error}</p>}
+        {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        {counts && (
+        {!counts ? (
+          <p className="text-sm text-gray-500">Loading...</p>
+        ) : (
           <div className="grid grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 h-full">
             {statusWidgets.map((widget) => (
               <StatusWidget
