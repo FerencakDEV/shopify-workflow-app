@@ -159,7 +159,8 @@ const Home = () => {
           >
             <button
               onClick={() => toggleFullscreen('workload')}
-              className={`absolute ${isWorkloadFullscreen ? 'top-4 right-4' : 'top-0 right-0'} z-50 bg-white/80 backdrop-blur rounded-full p-2 shadow hover:bg-white transition`}
+              className="absolute top-0 right-0 z-10 p-2 text-gray-600 hover:text-black"
+
               title={isWorkloadFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
               {isWorkloadFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
