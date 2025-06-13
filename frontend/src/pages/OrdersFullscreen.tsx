@@ -46,16 +46,22 @@ const statusWidgets = [
 
 const OrdersFullscreen = () => {
   const [counts, setCounts] = useState<Counts | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCounts = async () => {
       try {
         const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/dashboard/status-counts');
-        const resData: { counts: Counts } = await res.json();
-        setCounts(resData.counts);
-      } catch (err) {
-        console.error('Failed to fetch order counts');
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        setCounts(data.counts);
+      } catch (err: any) {
+        console.error('❌ Error loading counts:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -66,27 +72,30 @@ const OrdersFullscreen = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white">
-      {/* Sticky header with time + statuses */}
       <div className="sticky top-0 z-50">
         <ContentHeader />
       </div>
 
-      {/* Fullscreen widget grid */}
-      <div className="flex-grow overflow-auto px-6 py-4">
-        <div className="grid grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 min-h-[calc(100vh-64px)]">
-          {statusWidgets.map((widget) => (
-            <StatusWidget
-              key={widget.key}
-              statusKey={widget.key}
-              label={widget.label}
-              sublabel={widget.sub}
-              color={widget.color}
-              count={counts?.[widget.key as keyof Counts] ?? 0}
-              onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
-              fullscreen={true}
-            />
-          ))}
-        </div>
+      <div className="flex-grow px-6 py-4">
+        {loading && <p className="text-sm">Loading...</p>}
+        {error && <p className="text-sm text-red-600">Error: {error}</p>}
+
+        {counts && (
+          <div className="grid grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 h-full">
+            {statusWidgets.map((widget) => (
+              <StatusWidget
+                key={widget.key}
+                statusKey={widget.key}
+                label={widget.label}
+                sublabel={widget.sub}
+                color={widget.color}
+                count={counts[widget.key as keyof Counts] ?? 0}
+                onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
+                fullscreen
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
