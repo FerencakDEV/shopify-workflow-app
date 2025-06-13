@@ -7,7 +7,7 @@ const WorkloadFullscreen: React.FC = () => {
     <div className="h-screen w-screen flex flex-col bg-white">
       {/* Sticky header with time + API status only */}
       <div className="sticky top-0 z-50 border-b">
-        <ContentHeader hideSearch hideStaff />
+<ContentHeader hideSearch hideStaff rightTitle="Staff Workload" />
       </div>
 
       {/* Fullscreen Workload content */}

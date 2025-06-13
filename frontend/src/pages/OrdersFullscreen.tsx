@@ -47,7 +47,7 @@ const OrdersFullscreen = () => {
   return (
     <div className="h-screen w-screen flex flex-col bg-white">
       <div className="sticky top-0 z-50 border-b">
-        <ContentHeader hideSearch hideStaff />
+<ContentHeader hideSearch hideStaff rightTitle="Orders By Status" />
       </div>
 
       <div className="flex-grow px-6 py-4">

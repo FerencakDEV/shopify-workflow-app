@@ -4,9 +4,10 @@ import { MdCheckCircle, MdSearch, MdMenu } from 'react-icons/md';
 interface ContentHeaderProps {
   hideSearch?: boolean;
   hideStaff?: boolean;
+  rightTitle?: string;
 }
 
-const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderProps) => {
+const ContentHeader = ({ hideSearch = false, hideStaff = false, rightTitle }: ContentHeaderProps) => {
   const [dateTime, setDateTime] = useState(new Date());
   const [apiStatus, setApiStatus] = useState<'live' | 'error'>('live');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -33,9 +34,7 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -55,47 +54,63 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
         isScrolled ? 'py-1' : 'py-2'
       }`}
     >
-      <div className={`flex flex-wrap lg:flex-nowrap items-center justify-between gap-3
-        ${hideSearch && hideStaff ? 'compact-header' : ''}`}>
-        {/* Left side */}
-        <div className="flex items-center gap-4 shrink-0">
-          <span className="text-xl font-bold text-[#008060] whitespace-nowrap">
-            Reads <span className="text-black">WorkFlow</span>
-          </span>
-          <button className="lg:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
-            <MdMenu />
-          </button>
-        </div>
-
-        <div className="flex items-center flex-wrap gap-2">
-          <div className="bg-gray-100 text-sm text-gray-800 px-3 py-1 rounded-lg">
-            {new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            {` ${formattedTime.split(',')[0]}, ${formattedTime.split(',')[1]}`}
+      <div
+        className={`flex items-center justify-between flex-wrap gap-3 ${
+          hideSearch && hideStaff ? 'compact-header' : ''
+        }`}
+      >
+        {/* Left block: logo + time + status */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold text-[#008060] whitespace-nowrap">
+              Reads <span className="text-black">WorkFlow</span>
+            </span>
+            <button className="lg:hidden text-2xl" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+              <MdMenu />
+            </button>
           </div>
 
-          <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm ${
-              apiStatus === 'live' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${apiStatus === 'live' ? 'bg-green-500 animate-pulse-live' : 'bg-red-500'}`} />
-            {apiStatus === 'live' ? 'Live' : 'Error'}
-          </div>
+          <div className="flex items-center flex-wrap gap-2">
+            <div className="bg-gray-100 text-sm text-gray-800 px-3 py-1 rounded-lg">
+              {new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {` ${formattedTime.split(',')[0]}, ${formattedTime.split(',')[1]}`}
+            </div>
 
-          <a
-            href="https://www.shopifystatus.com/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800 hover:text-[#008060] transition-colors"
-          >
-            Shopify status:
-            <MdCheckCircle className="text-[#008060] text-lg" />
-            <span className="text-[#008060] font-medium">Online</span>
-          </a>
+            <div
+              className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm ${
+                apiStatus === 'live' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  apiStatus === 'live' ? 'bg-green-500 animate-pulse-live' : 'bg-red-500'
+                }`}
+              />
+              {apiStatus === 'live' ? 'Live' : 'Error'}
+            </div>
+
+            <a
+              href="https://www.shopifystatus.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800 hover:text-[#008060] transition-colors"
+            >
+              Shopify status:
+              <MdCheckCircle className="text-[#008060] text-lg" />
+              <span className="text-[#008060] font-medium">Online</span>
+            </a>
+          </div>
         </div>
 
-        {/* Right side */}
-        {!hideSearch && !hideStaff && (
+        {/* Right block: title or search/staff */}
+        {hideSearch && hideStaff && rightTitle ? (
+          <div className="text-right whitespace-nowrap text-sm font-semibold text-gray-700 flex items-center gap-1">
+            {rightTitle}
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M3 3h4a1 1 0 100-2H2a1 1 0 00-1 1v5a1 1 0 102 0V4.414l4.293 4.293a1 1 0 001.414-1.414L4.414 3H3zm14 14h-4a1 1 0 100 2h5a1 1 0 001-1v-5a1 1 0 10-2 0v3.586l-4.293-4.293a1 1 0 00-1.414 1.414L15.586 17H17z" />
+            </svg>
+          </div>
+        ) : (
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap ml-auto">
             {!hideSearch && (
               <div className="relative w-full sm:w-60">
