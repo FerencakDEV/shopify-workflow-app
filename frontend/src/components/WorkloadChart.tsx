@@ -62,7 +62,8 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => 
   const maxAssigned = Math.max(...workloadData.map((x) => x.assigned), 1);
 
   return (
-    <div className={`w-full ${fullscreen ? 'fixed inset-0 z-50 bg-white p-6 overflow-auto' : 'h-full flex flex-col'}`}>
+    <div className={`w-full ${fullscreen ? 'bg-white p-6 overflow-auto min-h-[calc(100vh-64px)]' : 'h-full flex flex-col'}`}>
+
       <div
         className={`grid grid-cols-[1fr_2fr_2fr] px-3 pb-3 border-b ${
           fullscreen ? 'text-2xl font-bold text-gray-700' : 'text-[15px] font-semibold text-gray-600'
