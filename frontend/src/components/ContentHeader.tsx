@@ -11,7 +11,6 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
   const [apiStatus, setApiStatus] = useState<'live' | 'error'>('live');
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setDateTime(new Date()), 1000);
@@ -34,20 +33,9 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const updateCompact = () => {
-      setIsCompact(window.innerWidth <= 960 && window.innerHeight <= 540);
-    };
-    updateCompact();
-    window.addEventListener('resize', updateCompact);
-    return () => window.removeEventListener('resize', updateCompact);
   }, []);
 
   const formattedTime = dateTime.toLocaleString('en-US', {
@@ -63,12 +51,16 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
     <div
       className={`sticky top-0 z-50 border-b bg-white shadow-sm transition-all duration-300 ${
         isScrolled ? 'py-1' : 'py-2'
-      } ${isCompact ? 'compact-header' : ''}`}
+      }`}
     >
-      <div className="flex flex-wrap lg:flex-nowrap justify-between items-center px-4 gap-3">
+      <div
+        className={`flex items-center justify-between px-4 flex-wrap gap-3 lg:flex-nowrap ${
+          hideSearch && hideStaff ? 'tv-condensed-header' : ''
+        }`}
+      >
         {/* Left block */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full lg:w-auto">
-          <div className="flex justify-between items-center w-full lg:w-auto">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2">
+          <div className="flex items-center justify-between w-full lg:w-auto">
             <span className="text-xl font-bold text-[#008060] whitespace-nowrap">
               Reads <span className="text-black">WorkFlow</span>
             </span>
@@ -81,14 +73,14 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
             </button>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full lg:w-auto">
-            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2">
+            <div className="flex items-center gap-2 bg-gray-100 text-sm text-gray-800 px-3 py-1 rounded-lg">
               {new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               {` ${formattedTime.split(',')[0]}, ${formattedTime.split(',')[1]}`}
             </div>
 
             <div
-              className={`flex items-center gap-2 px-3 py-1 rounded-lg ${
+              className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm ${
                 apiStatus === 'live' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
               }`}
             >
@@ -104,7 +96,7 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
               href="https://www.shopifystatus.com/"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-gray-800 hover:text-[#008060] transition-colors duration-200"
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800 hover:text-[#008060] transition-colors duration-200"
             >
               Shopify status:
               <MdCheckCircle className="text-[#008060] text-lg" />
@@ -114,8 +106,8 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
         </div>
 
         {/* Right block */}
-        {!hideSearch && !hideStaff && (menuOpen || typeof window !== 'undefined') && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full lg:w-auto">
+        {(menuOpen || typeof window !== 'undefined') && (!hideSearch || !hideStaff) && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
             {!hideSearch && (
               <div className="relative w-full sm:w-60">
                 <input
