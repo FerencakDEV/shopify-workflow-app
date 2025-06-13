@@ -82,7 +82,7 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => 
             <React.Fragment key={assignee}>
               <div
   className={`grid grid-cols-[1fr_2fr_2fr] items-center px-3 ${
-    fullscreen ? 'py-[6px] text-[15px] leading-tight' : 'py-4 text-[15px]'
+    fullscreen ? 'py-[6px] text-[20px] leading-tight' : 'py-4 text-[15px]'
   } hover:bg-gray-100 cursor-pointer`}
   onClick={() => toggleAssignee(assignee)}
 >
