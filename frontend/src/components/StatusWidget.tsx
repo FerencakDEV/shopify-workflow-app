@@ -22,23 +22,22 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`w-full h-full bg-white shadow-sm hover:shadow-md transition cursor-pointer ${
-        fullscreen
+      className={`w-full h-full bg-white shadow-sm hover:shadow-md transition cursor-pointer
+        ${fullscreen
           ? 'flex flex-col items-center justify-center text-center px-4 py-6'
-          : 'flex items-center rounded-lg p-4'
-      } ${
-        fullscreen ? 'status-widget-fullscreen' : ''
-      }`}
+          : 'flex items-center rounded-lg p-4'}
+        ${fullscreen ? 'status-widget-fullscreen' : ''}
+      `}
       style={{
         minHeight: fullscreen ? '220px' : undefined,
       }}
     >
       <div
-        className={`flex items-center justify-center font-bold rounded-lg ${
-          fullscreen
-            ? 'h-[6.5rem] w-[6.5rem] text-[3rem] mb-6'
-            : 'h-12 w-12 text-md rounded-l-lg'
-        }`}
+        className={`flex items-center justify-center font-bold rounded-lg
+          ${fullscreen
+            ? 'h-[6.5rem] w-[6.5rem] text-[3rem] mb-4'
+            : 'h-12 w-12 text-md rounded-l-lg'}
+        `}
         style={{
           backgroundColor: color,
           color: '#2d2d2d',
@@ -47,18 +46,18 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
         {count}
       </div>
 
-      <div className={fullscreen ? '' : 'ml-4'}>
+      <div className={fullscreen ? 'w-full flex flex-col items-center justify-start text-center mt-auto' : 'ml-4'}>
         <div
-          className={`font-semibold text-gray-800 ${
-            fullscreen ? 'text-[2rem] leading-snug' : 'text-sm'
-          }`}
+          className={`font-semibold text-gray-800 leading-tight
+            ${fullscreen ? 'text-[1.9rem] min-h-[2.5rem]' : 'text-sm'}
+          `}
         >
           {label}
         </div>
         <div
-          className={`text-gray-500 ${
-            fullscreen ? 'text-[1.3rem] mt-2' : 'text-xs'
-          }`}
+          className={`text-gray-500 leading-tight
+            ${fullscreen ? 'text-[1.2rem] mt-2 min-h-[1.8rem]' : 'text-xs'}
+          `}
         >
           {sublabel}
         </div>
