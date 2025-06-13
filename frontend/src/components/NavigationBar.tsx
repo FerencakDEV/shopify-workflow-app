@@ -7,10 +7,10 @@ const NavBar = () => {
       <Link to="/" className="flex items-center gap-2 hover:text-blue-600 transition">
         <MdHome /> Home
       </Link>
-      <Link to="/orders" className="flex items-center gap-2 hover:text-blue-600 transition">
+      <Link to="/orders/fullscreen" className="flex items-center gap-2 hover:text-blue-600 transition">
         <MdList /> Orders by Status ▾
       </Link>
-      <Link to="/staff" className="flex items-center gap-2 hover:text-blue-600 transition">
+      <Link to="/workload/fullscreen" className="flex items-center gap-2 hover:text-blue-600 transition">
         <MdPerson /> Staff Workload ▾
       </Link>
     </nav>
