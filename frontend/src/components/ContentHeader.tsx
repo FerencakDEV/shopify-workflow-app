@@ -11,6 +11,7 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
   const [apiStatus, setApiStatus] = useState<'live' | 'error'>('live');
   const [menuOpen, setMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setDateTime(new Date()), 1000);
@@ -40,6 +41,15 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    const updateCompact = () => {
+      setIsCompact(window.innerWidth <= 960 && window.innerHeight <= 540);
+    };
+    updateCompact();
+    window.addEventListener('resize', updateCompact);
+    return () => window.removeEventListener('resize', updateCompact);
+  }, []);
+
   const formattedTime = dateTime.toLocaleString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -53,15 +63,11 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
     <div
       className={`sticky top-0 z-50 border-b bg-white shadow-sm transition-all duration-300 ${
         isScrolled ? 'py-1' : 'py-2'
-      } ${hideSearch && hideStaff ? 'text-sm' : ''}`}
+      } ${isCompact ? 'compact-header' : ''}`}
     >
-      <div
-        className={`flex justify-between items-center px-4 gap-3 ${
-          hideSearch && hideStaff ? 'flex-nowrap' : 'flex-wrap lg:flex-nowrap'
-        }`}
-      >
+      <div className="flex flex-wrap lg:flex-nowrap justify-between items-center px-4 gap-3">
         {/* Left block */}
-        <div className={`flex flex-col lg:flex-row items-start lg:items-center gap-2 ${hideSearch && hideStaff ? 'w-auto' : 'w-full'}`}>
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full lg:w-auto">
           <div className="flex justify-between items-center w-full lg:w-auto">
             <span className="text-xl font-bold text-[#008060] whitespace-nowrap">
               Reads <span className="text-black">WorkFlow</span>
@@ -76,17 +82,15 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
           </div>
 
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full lg:w-auto">
-            <div className={`flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg mt-1 lg:mt-0 ${hideSearch && hideStaff ? 'text-xs' : 'text-sm'}`}>
+            <div className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg">
               {new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               {` ${formattedTime.split(',')[0]}, ${formattedTime.split(',')[1]}`}
             </div>
 
             <div
-              className={`flex items-center gap-2 px-3 py-1 rounded-lg mt-1 lg:mt-0 ${
-                apiStatus === 'live'
-                  ? 'bg-gray-100 text-gray-800'
-                  : 'bg-red-100 text-red-800'
-              } ${hideSearch && hideStaff ? 'text-xs' : 'text-sm'}`}
+              className={`flex items-center gap-2 px-3 py-1 rounded-lg ${
+                apiStatus === 'live' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800'
+              }`}
             >
               <span
                 className={`w-2 h-2 rounded-full ${
@@ -100,9 +104,7 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
               href="https://www.shopifystatus.com/"
               target="_blank"
               rel="noreferrer"
-              className={`flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 mt-1 lg:mt-0 hover:text-[#008060] transition-colors duration-200 ${
-                hideSearch && hideStaff ? 'text-xs' : 'text-sm text-gray-800'
-              }`}
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-gray-800 hover:text-[#008060] transition-colors duration-200"
             >
               Shopify status:
               <MdCheckCircle className="text-[#008060] text-lg" />

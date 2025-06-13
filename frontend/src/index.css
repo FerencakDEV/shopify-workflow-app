@@ -12,3 +12,21 @@
     animation: pulse 1.4s infinite;
   }
 }
+@media (max-width: 960px) {
+  .header-collapse {
+    font-size: 12px;
+  }
+
+  .header-collapse .text-xl {
+    font-size: 1rem;
+  }
+
+  .header-collapse input {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .header-collapse .text-sm {
+    font-size: 11px;
+  }
+}
