@@ -50,8 +50,13 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false }: ContentHeaderP
   });
 
   return (
-    <div className={`sticky top-0 z-50 flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 transition-all duration-300 ${isScrolled ? 'py-1.5' : 'py-3'} border-b bg-white shadow-sm gap-3 lg:gap-0`}>
-      {/* Left block */}
+<div
+  className={`sticky top-0 z-50 flex flex-wrap justify-between items-center px-4 transition-all duration-300 ${
+    isScrolled ? 'py-1' : 'py-2'
+  } border-b bg-white shadow-sm gap-3 ${
+    hideSearch && hideStaff ? 'text-sm lg:text-base' : ''
+  }`}
+>      {/* Left block */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full">
         <div className="flex justify-between items-center w-full lg:w-auto">
           <span className="text-xl font-bold text-[#008060] whitespace-nowrap">
