@@ -63,9 +63,8 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => 
 
   return (
     <div className={`w-full ${fullscreen ? 'bg-white p-6 overflow-auto min-h-[calc(100vh-64px)]' : 'h-full flex flex-col'}`}>
-
       <div
-        className={`grid grid-cols-[1fr_2fr_2fr] px-3 pb-3 border-b ${
+        className={`grid grid-cols-[1fr_2fr_2fr] gap-x-6 px-3 pb-3 border-b ${
           fullscreen ? 'text-2xl font-bold text-gray-700' : 'text-[15px] font-semibold text-gray-600'
         }`}
       >
@@ -81,14 +80,14 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => 
           return (
             <React.Fragment key={assignee}>
               <div
-  className={`grid grid-cols-[1fr_2fr_2fr] items-center px-3 ${
-    fullscreen ? 'py-[6px] text-[25px] leading-tight' : 'py-4 text-[20px]'
-  } hover:bg-gray-100 cursor-pointer`}
-  onClick={() => toggleAssignee(assignee)}
->
+                className={`grid grid-cols-[1fr_2fr_2fr] gap-x-6 items-center px-3 ${
+                  fullscreen ? 'py-[8px] text-[18px] leading-tight' : 'py-4 text-[20px]'
+                } hover:bg-gray-100 cursor-pointer`}
+                onClick={() => toggleAssignee(assignee)}
+              >
                 <div className="text-gray-800 font-medium">{assignee}</div>
                 <div className="flex items-center gap-3">
-                  <span className="text-orange-600 font-semibold">{entry.inProgress}</span>
+                  <span className="text-orange-600 font-semibold min-w-[1.5rem] text-right">{entry.inProgress}</span>
                   <div className={`relative ${fullscreen ? 'h-5' : 'h-3'} bg-orange-100 rounded w-full max-w-[300px]`}>
                     <div
                       className="absolute top-0 left-0 h-full bg-orange-500 rounded"
@@ -97,7 +96,7 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => 
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-600 font-semibold">{entry.assigned}</span>
+                  <span className="text-gray-600 font-semibold min-w-[1.5rem] text-right">{entry.assigned}</span>
                   <div className={`relative ${fullscreen ? 'h-5' : 'h-3'} bg-gray-200 rounded w-full max-w-[300px]`}>
                     <div
                       className="absolute top-0 left-0 h-full bg-gray-700 rounded"
