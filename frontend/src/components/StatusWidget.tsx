@@ -39,7 +39,7 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
         }`}
         style={{
           backgroundColor: color,
-          color: getTextColor(color),
+          color: '#2d2d2d',
         }}
       >
         {count}
