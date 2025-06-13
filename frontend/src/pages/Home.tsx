@@ -1,8 +1,10 @@
+// Home.tsx (upravené)
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { StatusWidget } from '../components/StatusWidget';
 import WorkloadChart from '../components/WorkloadChart';
+import ContentHeader from '../components/ContentHeader'; // <- Pridané
 
 interface Counts {
   newOrders: number;
@@ -95,11 +97,8 @@ const Home = () => {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white border-b p-4 flex items-center justify-between shadow-sm">
-        <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
-        {/* (Optional right content can be added here) */}
-      </header>
+      {/* Sticky Header - Zamenený za ContentHeader */}
+      <ContentHeader />
 
       {/* Main content */}
       <div className="flex-grow overflow-auto p-6 space-y-8">
@@ -160,7 +159,6 @@ const Home = () => {
             <button
               onClick={() => toggleFullscreen('workload')}
               className="absolute top-0 right-0 z-10 p-2 text-gray-600 hover:text-black"
-
               title={isWorkloadFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
               {isWorkloadFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
