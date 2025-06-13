@@ -13,7 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/status/:slug" element={<WidgetPage />} /> 
-        <Route path="/orders/fullscreen" element={<OrdersFullscreen />} />
+        <Route path="/orders" element={<OrdersFullscreen />} />
 <Route path="/workload/fullscreen" element={<WorkloadFullscreen />} />
       </Routes>
     </div>
