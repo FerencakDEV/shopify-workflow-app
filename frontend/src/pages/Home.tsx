@@ -63,17 +63,11 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleFullscreen = async (type: 'orders' | 'workload') => {
-    const ref = type === 'orders' ? ordersRef.current : workloadRef.current;
-    const isActive = document.fullscreenElement;
-
-    if (!isActive && ref) {
-      await ref.requestFullscreen?.();
-      type === 'orders' ? setIsOrdersFullscreen(true) : setIsWorkloadFullscreen(true);
+  const toggleFullscreen = (type: 'orders' | 'workload') => {
+    if (type === 'orders') {
+      setIsOrdersFullscreen(!isOrdersFullscreen);
     } else {
-      await document.exitFullscreen?.();
-      setIsOrdersFullscreen(false);
-      setIsWorkloadFullscreen(false);
+      setIsWorkloadFullscreen(!isWorkloadFullscreen);
     }
   };
 
@@ -96,10 +90,61 @@ const Home = () => {
   return (
     <div className="h-screen flex flex-col">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white border-b p-4 flex items-center justify-between shadow-sm">
-        <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
-        {/* (Optional right content can be added here) */}
-      </header>
+      <div className="sticky top-0 z-50 flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 transition-all duration-300 border-b bg-white shadow-sm gap-3 lg:gap-0 py-2">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full">
+          <div className="flex justify-between items-center w-full lg:w-auto">
+            <span className="text-xl font-bold text-[#008060] whitespace-nowrap">
+              Reads <span className="text-black">WorkFlow</span>
+            </span>
+          </div>
+
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full lg:w-auto">
+            <div className="flex items-center gap-2 bg-gray-100 text-sm text-gray-800 px-3 py-1 rounded-lg mt-1 lg:mt-0">
+              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} Friday, June 13
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-1 rounded-lg text-sm mt-1 lg:mt-0 bg-gray-100 text-gray-800">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse-live" />
+              Live
+            </div>
+
+            <a
+              href="https://www.shopifystatus.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800 mt-1 lg:mt-0 hover:text-[#008060] transition-colors duration-200"
+            >
+              Shopify status:
+              <span className="text-[#008060] font-medium">Online</span>
+            </a>
+          </div>
+        </div>
+
+        {!isWorkloadFullscreen && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full lg:w-auto">
+            <div className="relative w-full sm:w-60">
+              <input
+                type="text"
+                placeholder="Search order number..."
+                className="w-full pl-3 pr-9 py-2 bg-gray-100 text-sm rounded-md outline-none placeholder-gray-500"
+              />
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m1.4-5.65a6 6 0 11-12 0 6 6 0 0112 0z" />
+              </svg>
+            </div>
+
+            <button className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-sm text-gray-800 font-medium px-3 py-1.5 rounded-md">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 10a4 4 0 100-8 4 4 0 000 8zM2 17a6 6 0 1112 0H2z" />
+              </svg>
+              <span className="font-semibold">Staff</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Main content */}
       <div className="flex-grow overflow-auto p-6 space-y-8">
@@ -160,7 +205,6 @@ const Home = () => {
             <button
               onClick={() => toggleFullscreen('workload')}
               className="absolute top-0 right-0 z-10 p-2 text-gray-600 hover:text-black"
-
               title={isWorkloadFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
               {isWorkloadFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
