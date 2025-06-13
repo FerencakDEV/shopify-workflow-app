@@ -26,6 +26,8 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
         fullscreen
           ? 'flex flex-col items-center justify-center text-center px-4 py-6'
           : 'flex items-center rounded-lg p-4'
+      } ${
+        fullscreen ? 'status-widget-fullscreen' : ''
       }`}
       style={{
         minHeight: fullscreen ? '220px' : undefined,
@@ -73,4 +75,3 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({
     </div>
   );
 };
-
