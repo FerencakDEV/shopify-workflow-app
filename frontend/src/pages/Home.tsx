@@ -163,7 +163,7 @@ const Home = () => {
 
               title={isWorkloadFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
-              {isWorkloadFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+              {isWorkloadFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
             </button>
 
             {!isWorkloadFullscreen && (
