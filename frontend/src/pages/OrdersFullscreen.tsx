@@ -55,8 +55,11 @@ const OrdersFullscreen = () => {
         const res = await fetch('https://shopify-workflow-app-backend.onrender.com/api/dashboard/status-counts');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const resData = await res.json();
-        console.log('✅ counts:', resData);
-        setCounts(resData.counts);
+const countsData = resData.counts ?? resData;
+if (typeof countsData !== 'object') {
+  throw new Error('Invalid response format');
+}
+setCounts(countsData)
       } catch (err: any) {
         setError(err.message || 'Failed to fetch counts');
       }
