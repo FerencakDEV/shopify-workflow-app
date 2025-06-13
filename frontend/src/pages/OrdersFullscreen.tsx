@@ -47,12 +47,10 @@ const OrdersFullscreen = () => {
   return (
     <div className="h-screen w-screen flex flex-col bg-white">
       <div className="sticky top-0 z-50 border-b">
-        <ContentHeader />
+        <ContentHeader hideSearch hideStaff />
       </div>
 
       <div className="flex-grow px-6 py-4">
-        <div className="mb-4 text-lg text-gray-700 font-bold">📊 OrdersFullscreen Component Loaded</div>
-
         {error && (
           <div className="text-red-600 font-medium text-sm bg-red-100 p-4 rounded mb-4">
             ❌ Error loading counts: {error}
