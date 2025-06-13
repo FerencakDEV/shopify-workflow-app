@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StatusWidget } from '../components/StatusWidget';
+import ContentHeader from '../components/ContentHeader';
 
 interface Counts {
   newOrders: number;
@@ -64,20 +65,28 @@ const OrdersFullscreen = () => {
   }, []);
 
   return (
-    <div className="h-screen bg-white px-6 py-4">
-      <div className="grid grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 h-full">
-        {statusWidgets.map((widget) => (
-          <StatusWidget
-            key={widget.key}
-            statusKey={widget.key}
-            label={widget.label}
-            sublabel={widget.sub}
-            color={widget.color}
-            count={counts?.[widget.key as keyof Counts] ?? 0}
-            onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
-            fullscreen={true}
-          />
-        ))}
+    <div className="h-screen w-screen flex flex-col bg-white">
+      {/* Sticky header with time + statuses */}
+      <div className="sticky top-0 z-50">
+        <ContentHeader />
+      </div>
+
+      {/* Fullscreen widget grid */}
+      <div className="flex-grow overflow-auto px-6 py-4">
+        <div className="grid grid-cols-5 grid-rows-2 gap-[1px] bg-gray-200 min-h-[calc(100vh-64px)]">
+          {statusWidgets.map((widget) => (
+            <StatusWidget
+              key={widget.key}
+              statusKey={widget.key}
+              label={widget.label}
+              sublabel={widget.sub}
+              color={widget.color}
+              count={counts?.[widget.key as keyof Counts] ?? 0}
+              onClick={() => navigate(`/status/${slugMap[widget.key]}`)}
+              fullscreen={true}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
