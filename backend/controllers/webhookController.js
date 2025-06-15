@@ -113,15 +113,16 @@ const orderUpdated = async (req, res) => {
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || orderId);
 
   try {
-    let { fullOrder, metafields } = await fetchWithRetry(orderId, 5, 3000);
+    const { fullOrder, metafields } = await fetchWithRetry(orderId, 5, 3000);
 
     if (!fullOrder) {
       console.error(`❌ UPDATE: Full order ${orderId} not available`);
       return res.status(500).send('Failed to fetch full order');
     }
 
+    // ✅ STOP ak metafields neprisli
     if (!metafields.length) {
-      console.warn(`📭 Metafields missing for ${orderId} → deferring`);
+      console.warn(`📭 No metafields – deferring order ${orderId}`);
       await PendingUpdate.updateOne(
         { orderId },
         { orderId, receivedAt: new Date(), reason: 'empty-metafields' },
@@ -132,32 +133,40 @@ const orderUpdated = async (req, res) => {
 
     const cleaned = cleanOrder(fullOrder, metafields);
 
-    if (!cleaned.custom_status || cleaned.custom_status === 'New Order') {
-      console.warn(`⚠️ custom_status empty → deferring ${orderId}`);
+    // ✅ STOP ak sa nepodarilo načítať custom_status
+    if (
+      !cleaned.custom_status ||
+      cleaned.custom_status === 'New Order' ||
+      !cleaned.metafields ||
+      Object.keys(cleaned.metafields).length === 0
+    ) {
+      console.warn(`⚠️ Skipping ${orderId} – cleaned data incomplete`);
       await PendingUpdate.updateOne(
         { orderId },
-        { orderId, receivedAt: new Date(), reason: 'empty-custom-status' },
+        { orderId, receivedAt: new Date(), reason: 'incomplete-cleaned' },
         { upsert: true }
       );
-      return res.status(200).send('Deferred – custom_status missing');
+      return res.status(200).send('Deferred – incomplete cleaned');
     }
 
+    // 🔄 Zápis
     const existing = await Order.findOne({ id: cleaned.id });
 
     if (!existing) {
       await Order.create(cleaned);
-      console.log(`✅ UPDATE → new order ${cleaned.name}`);
-      return res.status(200).send('Created new');
+      console.log(`✅ Created new order ${cleaned.name}`);
+    } else {
+      await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
+      console.log(`✅ Updated existing order ${cleaned.name}`);
     }
 
-    await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
-    console.log(`✅ UPDATE → modified order ${cleaned.name}`);
-    res.status(200).send('Updated existing');
+    res.status(200).send('UPDATE OK');
   } catch (err) {
     console.error(`❌ UPDATE ERROR – ${orderId}: ${err.message}`);
     res.status(500).send('Webhook error');
   }
 };
+
 
 
 
