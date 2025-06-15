@@ -1,11 +1,14 @@
 const cleanOrder = (order, metafields = []) => {
+  // ✅ Opravené: filtruje aj podľa namespace = 'custom'
   const getMeta = (key, fallbackKey = null) => {
-    const found = metafields.find((m) => m.key === key);
+    const found = metafields.find((m) => m.namespace === 'custom' && m.key === key);
     if (found && typeof found.value === 'string') return found.value.trim();
+
     if (fallbackKey) {
-      const fallback = metafields.find((m) => m.key === fallbackKey);
+      const fallback = metafields.find((m) => m.namespace === 'custom' && m.key === fallbackKey);
       if (fallback && typeof fallback.value === 'string') return fallback.value.trim();
     }
+
     return '';
   };
 
