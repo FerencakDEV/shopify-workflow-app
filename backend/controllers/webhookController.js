@@ -140,9 +140,10 @@ const orderUpdated = async (req, res) => {
       metafields = retryMetafields;
     }
 
-    console.log(`📦 Metafields for ${orderId}:`);
+    // 🧪 DEBUG výpis všetkých metafields
+    console.log(`📦 Metafields pre ${orderId}:`);
     metafields.forEach((m) => {
-      console.log(`   ${m.namespace}.${m.key}: ${m.value}`);
+      console.log(`   namespace: ${m.namespace}, key: ${m.key}, value: ${m.value}`);
     });
 
     // ✅ 3. cleanOrder + fallback fulfillment
