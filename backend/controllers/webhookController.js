@@ -113,7 +113,6 @@ const orderUpdated = async (req, res) => {
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || orderId);
 
   try {
-    // ⏳ 1. Prvé fetchovanie s retry (5 pokusov po 3s)
     let { fullOrder, metafields } = await fetchWithRetry(orderId, 5, 3000);
 
     if (!fullOrder) {
@@ -121,100 +120,45 @@ const orderUpdated = async (req, res) => {
       return res.status(500).send('Failed to fetch full order');
     }
 
-    // 📭 2. Ak metafields sú stále prázdne → druhý (oneskorený) pokus
-    if (metafields.length === 0) {
-      console.warn(`📭 Metafields empty for ${orderId}, retrying after 10s...`);
-      await delay(10000);
-      const retryMetafields = await fetchMetafields(orderId);
-
-      if (retryMetafields.length === 0) {
-        console.warn(`📭 Still empty – adding ${orderId} to PendingUpdates`);
-        await PendingUpdate.updateOne(
-          { orderId },
-          { orderId, receivedAt: new Date() },
-          { upsert: true }
-        );
-        return res.status(200).send('UPDATE deferred – metafields missing');
-      }
-
-      metafields = retryMetafields;
+    if (!metafields.length) {
+      console.warn(`📭 Metafields missing for ${orderId} → deferring`);
+      await PendingUpdate.updateOne(
+        { orderId },
+        { orderId, receivedAt: new Date(), reason: 'empty-metafields' },
+        { upsert: true }
+      );
+      return res.status(200).send('Deferred – metafields missing');
     }
 
-    // 🧪 DEBUG výpis všetkých metafields
-    console.log(`📦 Metafields pre ${orderId}:`);
-    metafields.forEach((m) => {
-      console.log(`   namespace: ${m.namespace}, key: ${m.key}, value: ${m.value}`);
-    });
+    const cleaned = cleanOrder(fullOrder, metafields);
 
-    // ✅ 3. cleanOrder + fallback fulfillment
-    let cleaned = cleanOrder(fullOrder, metafields);
-    applyFallbackFulfillmentStatus(cleaned);
-
-    // ⏳ 4. Ak custom_status je stále prázdny → ešte jeden pokus
     if (!cleaned.custom_status || cleaned.custom_status === 'New Order') {
-      console.warn(`📭 custom_status empty – retrying metafields after 10s for ${orderId}`);
-      await delay(10000);
-      const retryMetafields = await fetchMetafields(orderId);
-      const retriedCleaned = cleanOrder(fullOrder, retryMetafields);
-      applyFallbackFulfillmentStatus(retriedCleaned);
-
-      if (retriedCleaned.custom_status && retriedCleaned.custom_status !== 'New Order') {
-        console.log(`✅ custom_status loaded after delay: ${retriedCleaned.custom_status}`);
-        cleaned = retriedCleaned;
-        metafields = retryMetafields;
-      } else {
-        console.warn(`⚠️ Still missing custom_status for order ${orderId}`);
-      }
+      console.warn(`⚠️ custom_status empty → deferring ${orderId}`);
+      await PendingUpdate.updateOne(
+        { orderId },
+        { orderId, receivedAt: new Date(), reason: 'empty-custom-status' },
+        { upsert: true }
+      );
+      return res.status(200).send('Deferred – custom_status missing');
     }
 
-    // 🧩 5. Hľadanie existujúcej objednávky
     const existing = await Order.findOne({ id: cleaned.id });
 
     if (!existing) {
       await Order.create(cleaned);
-      console.log(`✅ UPDATE created new order ${cleaned.name || cleaned.id}`);
-      return res.status(200).send('UPDATE → Created new');
+      console.log(`✅ UPDATE → new order ${cleaned.name}`);
+      return res.status(200).send('Created new');
     }
 
-    // 🕵️‍♂️ 6. Porovnávanie polí
-    const changedFields = [];
-
-    const compareField = (fieldName) => {
-      const existingVal = JSON.stringify(existing[fieldName]);
-      const cleanedVal = JSON.stringify(cleaned[fieldName]);
-      if (existingVal !== cleanedVal) {
-        changedFields.push(fieldName);
-        console.log(`🔁 Changed ${fieldName}:`);
-        console.log(`   🕒 from:`, existing[fieldName]);
-        console.log(`   🆕 to  :`, cleaned[fieldName]);
-      }
-    };
-
-    [
-      'assignee',
-      'progress',
-      'order_number',
-      'fulfillment_status',
-      'custom_status',
-      'expected_time',
-      'note',
-      'is_urgent'
-    ].forEach(compareField);
-
-    // 💾 7. Uloženie zmien do DB
-    if (changedFields.length) {
-      await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
-      console.log(`✅ UPDATE modified order ${cleaned.name || cleaned.id}. Changed: ${changedFields.join(', ')}`);
-    } else {
-      console.log(`⏭️ UPDATE skipped – no changes for ${cleaned.name || cleaned.id}`);
-    }
-
-    res.status(200).send('UPDATE OK');
+    await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
+    console.log(`✅ UPDATE → modified order ${cleaned.name}`);
+    res.status(200).send('Updated existing');
   } catch (err) {
     console.error(`❌ UPDATE ERROR – ${orderId}: ${err.message}`);
-    res.status(500).send('UPDATE Error');
+    res.status(500).send('Webhook error');
   }
 };
+
 
 
 
