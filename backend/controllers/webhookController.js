@@ -113,35 +113,35 @@ const orderUpdated = async (req, res) => {
   console.log('🔁 Webhook – UPDATE received:', webhookOrder.name || orderId);
 
   try {
-    // ⏳ 1. Čakanie 10 sekúnd
-    console.log(`🕒 Waiting 10s for Shopify to finalize order ${orderId}...`);
-    await delay(10000);
+    // ⏳ 1. Prvé fetchovanie s retry logikou (5 pokusov po 3s)
+    const { fullOrder, metafields } = await fetchWithRetry(orderId, 5, 3000);
 
-    // 🔁 2. Fetch komplet objednávku + metafields z API
-    const fullOrder = await fetchFullOrder(orderId);
-    const metafields = await fetchMetafields(orderId);
-
-    console.log(`📦 Metafields pre ${orderId}:`);
-    console.dir(metafields, { depth: null });
-
-    // ❌ 3. Ak objednávka chýba
+    // ❌ 2. Ak objednávka sa nepodarí načítať ani po retry
     if (!fullOrder) {
       console.error(`❌ UPDATE: Full order ${orderId} not available`);
       return res.status(500).send('Failed to fetch full order');
     }
 
-    // 📭 4. Ak metafields sú prázdne → pending buffer
+    // 📭 3. Ak metafields sú stále prázdne → druhý (oneskorený) pokus
     if (metafields.length === 0) {
-      console.warn(`📭 UPDATE fallback: Metafields prázdne pre ${orderId}, pridávam do PendingUpdates`);
-      await PendingUpdate.updateOne(
-        { orderId },
-        { orderId, receivedAt: new Date() },
-        { upsert: true }
-      );
-      return res.status(200).send('UPDATE deferred – metafields missing');
+      console.warn(`📭 Metafields empty for ${orderId}, retrying after 10s...`);
+      await delay(10000);
+      const retryMetafields = await fetchMetafields(orderId);
+
+      if (retryMetafields.length === 0) {
+        console.warn(`📭 Still empty – adding ${orderId} to PendingUpdates`);
+        await PendingUpdate.updateOne(
+          { orderId },
+          { orderId, receivedAt: new Date() },
+          { upsert: true }
+        );
+        return res.status(200).send('UPDATE deferred – metafields missing');
+      }
+
+      metafields.push(...retryMetafields); // nahradíme prázdny zoznam
     }
 
-    // ✅ 5. cleanOrder + fallback
+    // ✅ 4. Clean + fallback
     console.log('🧼 Volám cleanOrder...');
     const cleaned = cleanOrder(fullOrder, metafields);
 
@@ -151,7 +151,7 @@ const orderUpdated = async (req, res) => {
 
     applyFallbackFulfillmentStatus(cleaned);
 
-    // 🔍 6. Porovnanie a zápis do DB
+    // 🧩 5. Záznam v databáze
     const existing = await Order.findOne({ id: cleaned.id });
 
     if (!existing) {
@@ -160,6 +160,7 @@ const orderUpdated = async (req, res) => {
       return res.status(200).send('UPDATE → Created new');
     }
 
+    // 🕵️‍♂️ 6. Porovnanie kľúčových polí
     const changedFields = [];
 
     const compareField = (fieldName) => {
@@ -173,8 +174,18 @@ const orderUpdated = async (req, res) => {
       }
     };
 
-    ['assignee', 'progress', 'order_number', 'fulfillment_status', 'custom_status'].forEach(compareField);
+    [
+      'assignee',
+      'progress',
+      'order_number',
+      'fulfillment_status',
+      'custom_status',
+      'expected_time',
+      'note',
+      'is_urgent'
+    ].forEach(compareField);
 
+    // 💾 7. Uloženie zmien, ak sú
     if (changedFields.length) {
       await Order.updateOne({ id: cleaned.id }, { $set: cleaned });
       console.log(`✅ UPDATE modified order ${cleaned.name || cleaned.id}. Changed: ${changedFields.join(', ')}`);
@@ -188,6 +199,7 @@ const orderUpdated = async (req, res) => {
     res.status(500).send('UPDATE Error');
   }
 };
+
 
 
 
