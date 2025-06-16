@@ -10,10 +10,10 @@ const WorkloadFullscreen: React.FC = () => {
         <ContentHeader hideSearch hideStaff />
       </div>
 
-      {/* Nadpis so značkou */}
+      {/* Nadpis a badge vedľa seba */}
       <div className="flex items-center gap-3 px-6 pt-4">
         <div className="text-2xl font-bold text-gray-800">Workload</div>
-        <div className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+        <div className="text-sm font-semibold text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
           Print &amp; Design
         </div>
       </div>
