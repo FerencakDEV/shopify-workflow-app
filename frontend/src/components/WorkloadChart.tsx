@@ -16,6 +16,9 @@ interface OrderEntry {
 
 interface WorkloadChartProps {
   fullscreen?: boolean;
+  rowClassName?: string;
+  assigneeTextClassName?: string;
+  barHeightClassName?: string;
 }
 
 const assigneeOrder = ['Q1', 'Q2', 'Online', 'Thesis', 'Design', 'Design 2', 'MagicTouch', 'Posters'];
