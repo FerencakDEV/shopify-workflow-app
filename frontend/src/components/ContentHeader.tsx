@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 interface ContentHeaderProps {
   hideSearch?: boolean;
   hideStaff?: boolean;
-  rightTitle?: React.ReactNode; // ✅ umožňuje JSX, nie len string
+  rightTitle?: string;
 }
 
 const ContentHeader = ({ hideSearch = false, hideStaff = false, rightTitle }: ContentHeaderProps) => {
@@ -53,7 +53,7 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false, rightTitle }: Co
           <img
             src="/reads-icon.png"
             alt="Reads logo"
-            className="h-[1.25rem] w-auto object-contain"
+            className="h-[1.5rem] w-auto object-contain"
           />
           Reads <span className="text-black">WorkFlow</span>
         </a>
@@ -88,10 +88,14 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false, rightTitle }: Co
         </a>
       </div>
 
-      {/* Right side (title) */}
+      {/* Right side (title with icon) */}
       {rightTitle && (
-        <div className="cursor-default">
+        <div
+          className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-black cursor-pointer"
+          onClick={() => navigate('/')}
+        >
           {rightTitle}
+          <MdOpenInFull className="w-3 h-3 mt-[1px]" />
         </div>
       )}
     </div>
