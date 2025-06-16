@@ -48,8 +48,13 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false, rightTitle }: Co
       <div className="flex items-center gap-4">
         <a
           href="https://workflow.readshub.ie/"
-          className="text-xl font-bold text-[#008060] whitespace-nowrap hover:underline"
+          className="flex items-center gap-2 text-xl font-bold text-[#008060] whitespace-nowrap hover:underline"
         >
+          <img
+            src="/reads-icon.png"
+            alt="Reads logo"
+            className="h-[1.5rem] w-auto object-contain"
+          />
           Reads <span className="text-black">WorkFlow</span>
         </a>
 
