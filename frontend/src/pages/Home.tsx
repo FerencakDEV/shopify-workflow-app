@@ -134,6 +134,7 @@ const Home = () => {
 
             <div className="bg-white rounded-xl shadow p-4 h-full">
               <WorkloadChart
+                fullscreen={false}
                 rowClassName="py-3"
                 assigneeTextClassName="text-[15px]"
                 barHeightClassName="h-4"

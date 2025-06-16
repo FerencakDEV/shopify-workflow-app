@@ -23,7 +23,7 @@ interface WorkloadChartProps {
 
 const assigneeOrder = ['Q1', 'Q2', 'Online', 'Thesis', 'Design', 'Design 2', 'MagicTouch', 'Posters'];
 
-const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => {
+const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false, rowClassName, assigneeTextClassName, barHeightClassName }) => {
   const [workloadData, setWorkloadData] = useState<WorkloadEntry[]>([]);
   const [expandedAssignee, setExpandedAssignee] = useState<string | null>(null);
   const [orders, setOrders] = useState<Record<string, OrderEntry[]>>({});
@@ -84,14 +84,14 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => 
             <React.Fragment key={assignee}>
               <div
                 className={`grid grid-cols-[1fr_2fr_2fr] gap-x-6 items-center px-3 ${
-                  fullscreen ? 'py-[8px] text-[18px] leading-tight' : 'py-4 text-[20px]'
+                  rowClassName || (fullscreen ? 'py-[8px] text-[18px] leading-tight' : 'py-4 text-[20px]')
                 } hover:bg-gray-100 cursor-pointer`}
                 onClick={() => toggleAssignee(assignee)}
               >
-                <div className="text-gray-800 font-medium">{assignee}</div>
+                <div className={`text-gray-800 font-medium ${assigneeTextClassName || ''}`}>{assignee}</div>
                 <div className="flex items-center gap-3">
                   <span className="text-orange-600 font-semibold min-w-[1.5rem] text-right">{entry.inProgress}</span>
-                  <div className={`relative ${fullscreen ? 'h-5' : 'h-3'} bg-orange-100 rounded w-full max-w-[300px]`}>
+                  <div className={`relative ${barHeightClassName || (fullscreen ? 'h-5' : 'h-3')} bg-orange-100 rounded w-full max-w-[300px]`}>
                     <div
                       className="absolute top-0 left-0 h-full bg-orange-500 rounded"
                       style={{ width: `${(entry.inProgress / maxInProgress) * 100}%` }}
@@ -100,7 +100,7 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ fullscreen = false }) => 
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-gray-600 font-semibold min-w-[1.5rem] text-right">{entry.assigned}</span>
-                  <div className={`relative ${fullscreen ? 'h-5' : 'h-3'} bg-gray-200 rounded w-full max-w-[300px]`}>
+                  <div className={`relative ${barHeightClassName || (fullscreen ? 'h-5' : 'h-3')} bg-gray-200 rounded w-full max-w-[300px]`}>
                     <div
                       className="absolute top-0 left-0 h-full bg-gray-700 rounded"
                       style={{ width: `${(entry.assigned / maxAssigned) * 100}%` }}
