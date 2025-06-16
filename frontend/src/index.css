@@ -50,3 +50,17 @@
     margin-top: 0.25rem !important;
   }
 }
+@keyframes pulse-live {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-live {
+  animation: pulse-live 1.4s ease-in-out infinite;
+}

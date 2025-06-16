@@ -53,7 +53,7 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false, rightTitle }: Co
           <img
             src="/reads-icon.png"
             alt="Reads logo"
-            className="h-[1.5rem] w-auto object-contain"
+            className="h-[1.25rem] w-auto object-contain"
           />
           Reads <span className="text-black">WorkFlow</span>
         </a>
@@ -70,7 +70,9 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false, rightTitle }: Co
         >
           <span
             className={`w-2 h-2 rounded-full ${
-              apiStatus === 'live' ? 'bg-green-500 animate-pulse-live' : 'bg-red-500'
+              apiStatus === 'live'
+                ? 'bg-green-500 animate-pulse-live'
+                : 'bg-red-500'
             }`}
           />
           {apiStatus === 'live' ? 'Live' : 'Error'}
