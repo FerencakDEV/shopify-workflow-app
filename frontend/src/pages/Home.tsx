@@ -120,7 +120,7 @@ const Home = () => {
               className="absolute top-0 right-0 z-10 p-2 text-gray-600 hover:text-black"
               title="Fullscreen"
             >
-              <Maximize2 size={24} />
+              <Maximize2 size={20} />
             </button>
 
             <div className="flex items-center justify-between mb-2">
