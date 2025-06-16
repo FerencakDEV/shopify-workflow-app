@@ -83,7 +83,7 @@ const ContentHeader = ({ hideSearch = false, hideStaff = false, rightTitle }: Co
           className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-sm text-gray-800 hover:text-[#008060] transition-colors"
         >
           Shopify status:
-          <MdCheckCircle className="text-[#008060] text-lg" />
+          {/* <MdCheckCircle className="text-[#008060] text-lg" /> */}
           <span className="text-[#008060] font-medium">Online</span>
         </a>
       </div>
